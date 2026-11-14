@@ -363,6 +363,13 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
       <input id="recPhoto" class="vh" type="file" accept="image/*" capture="environment">
       <input id="recGallery" class="vh" type="file" accept="image/*">
     </div>
+    <div class="grid2">
+      <label for="skyObs">Weather now <span class="hint" style="font-weight:400">(what you see)</span>
+        <select id="skyObs"><option value="">Not noted</option><option value="sunny">Sunny</option><option value="partly cloudy">Partly cloudy</option><option value="overcast">Overcast</option><option value="drizzle">Drizzle</option><option value="rain">Rain</option><option value="fog">Fog or mist</option></select></label>
+      <label for="windObs">Wind
+        <select id="windObs"><option value="">Not noted</option><option value="calm">Calm</option><option value="light">Light</option><option value="moderate">Moderate</option><option value="strong">Strong</option></select></label>
+    </div>
+    <p class="hint" style="margin:-4px 0 0">Measured weather (temperature, humidity, rain, cloud, wind) is added automatically from the GPS point, now if online or later when the phone is back online.</p>
     <label for="notes">Notes
       <textarea id="notes" rows="2"></textarea></label>
     <button id="saveBtn" class="btn" type="button">Save record</button>
@@ -557,6 +564,7 @@ $("nsSave").onclick=async()=>{const name=$("nsName").value.trim(),country=$("nsC
 
 /* plot fields persist per viewer */
 const PLOT=["site","season","habitat","plot","lat","lon"];
+["skyObs","windObs"].forEach(k=>{const v=LS.get("dg_"+k,"");if(v)$(k).value=v;$(k).addEventListener("change",()=>LS.set("dg_"+k,$(k).value))});
 const savedPlot=LS.get("dg_plot",{});PLOT.forEach(k=>{if(savedPlot[k]!=null)$(k).value=savedPlot[k];$(k).addEventListener("change",()=>{LS.set("dg_plot",Object.fromEntries(PLOT.map(x=>[x,$(x).value])));if(k==="site")fillAnimals()})});
 fillSites();
 
@@ -592,7 +600,8 @@ function buildRecord(){const plot=Object.fromEntries(PLOT.map(k=>[k,$(k).value.t
   if(!plot.site)throw new Error("Choose or add a study site first");
   if(!plot.plot)throw new Error("Add a plot ID first");
   const st=siteOf(plot.site)||{};
-  const r={id:uid(),kind:S.kind,...plot,siteName:st.name||"",country:st.country||"",lat:num(plot.lat),lon:num(plot.lon),notes:$("notes").value.trim(),createdAt:new Date().toISOString()};
+  const r={id:uid(),kind:S.kind,...plot,siteName:st.name||"",country:st.country||"",lat:num(plot.lat),lon:num(plot.lon),notes:$("notes").value.trim(),skyObs:$("skyObs").value||null,windObs:$("windObs").value||null,createdAt:new Date().toISOString()};
+  r.weatherStatus=r.lat!=null&&r.lon!=null?"pending":"none";
   if(S.kind==="plant"){let sp=normSp($("species").value);if(!sp)throw new Error("Enter the plant species, or 'unknown'");
     const chk=spCheck(sp);if(chk.exact)sp=chk.exact;
     else if(chk.similar&&S.spOk!==sp){S.spOk=sp;showSpHint();throw new Error(`“${sp}” looks like “${chk.similar}”, already recorded. Tap the suggestion, or tap Save again to keep your spelling`)}
@@ -636,6 +645,46 @@ async function syncOutbox(){if(syncing||!S.db||!S.outbox.length||!navigator.onLi
 window.addEventListener("online",syncOutbox);
 /* (sync status: see the standalone section below) */
 
+/* ---------- weather (Open-Meteo, free, no key) ----------
+   Each record with a GPS point gets the modelled weather for its place and hour.
+   Offline records stay "pending" and are filled in once any team phone is online. */
+const WX_COLS=["skyObs","windObs","wx_temp","wx_rh","wx_rain","wx_cloud","wx_wind","wx_tmax","wx_tmin","wx_dayRain","wx_source"];
+function wxCell(r,c){return c.startsWith("wx_")?(r.weather||{})[c.slice(3)]:r[c]}
+function wxLine(r){const w=r.weather;
+  if(w)return `<div class="m">Weather: ${w.temp!=null?Math.round(w.temp)+" °C":""}${w.rh!=null?" · "+Math.round(w.rh)+"% humidity":""}${w.rain!=null?" · "+w.rain+" mm rain":""}${w.cloud!=null?" · "+Math.round(w.cloud)+"% cloud":""}${w.wind!=null?" · wind "+Math.round(w.wind)+" km/h":""}${r.skyObs?" · seen: "+esc(r.skyObs):""}</div>`;
+  if(r.weatherStatus==="pending"||(r.lat!=null&&r.lon!=null&&r.weatherStatus!=="none"))return `<div class="m">Weather: pending${r.skyObs?" · seen: "+esc(r.skyObs):""}</div>`;
+  return r.skyObs?`<div class="m">Weather seen: ${esc(r.skyObs)}${r.windObs?", "+esc(r.windObs)+" wind":""}</div>`:""}
+const WX={busy:false,tries:{},timer:null};
+function wxTime(c,r){if(c==="obs"){const d=new Date(r.createdAt);return isNaN(d)?null:{t:d.toISOString().slice(0,13),tz:"GMT"}}
+  const s=String(r.takenAt||"");return /^\d{4}-\d\d-\d\dT\d\d/.test(s)?{t:s.slice(0,13),tz:"auto"}:null}
+function wxPos(c,r){if(r.lat!=null&&r.lon!=null)return[r.lat,r.lon];if(c==="camobs"){const cam=S.cams.find(k=>k.id===r.cam);if(cam&&cam.lat!=null&&cam.lon!=null)return[cam.lat,cam.lon]}return null}
+async function wxFetch(lat,lon,t,tz){const day=t.slice(0,10),age=(Date.now()-Date.parse(day+"T00:00:00Z"))/864e5;
+  if(age<-14)throw new Error("too far ahead");
+  const arch=age>80,base=arch?"https://archive-api.open-meteo.com/v1/archive":"https://api.open-meteo.com/v1/forecast";
+  const q=new URLSearchParams({latitude:(+lat).toFixed(4),longitude:(+lon).toFixed(4),start_date:day,end_date:day,
+    hourly:"temperature_2m,relative_humidity_2m,precipitation,cloud_cover,wind_speed_10m",daily:"temperature_2m_max,temperature_2m_min,precipitation_sum",timezone:tz,wind_speed_unit:"kmh"});
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);
+  try{const res=await fetch(base+"?"+q,{signal:ctl.signal});if(!res.ok)throw new Error("weather service "+res.status);
+    const j=await res.json(),H=j.hourly||{},i=(H.time||[]).indexOf(t+":00"),D=j.daily||{};
+    if(i<0||H.temperature_2m[i]==null)throw new Error("not available yet");
+    const r1=v=>v==null?null:Math.round(v*10)/10;
+    return{temp:r1(H.temperature_2m[i]),rh:r1(H.relative_humidity_2m[i]),rain:r1(H.precipitation[i]),cloud:r1(H.cloud_cover[i]),wind:r1(H.wind_speed_10m[i]),
+      tmax:r1((D.temperature_2m_max||[])[0]),tmin:r1((D.temperature_2m_min||[])[0]),dayRain:r1((D.precipitation_sum||[])[0]),
+      hour:t+":00",timezone:j.timezone||tz,source:arch?"Open-Meteo historical (ERA5)":"Open-Meteo weather model",fetchedAt:new Date().toISOString()}}
+  finally{clearTimeout(to)}}
+async function wxFill(){if(WX.busy||!S.db||!navigator.onLine)return;WX.busy=true;let n=0;
+  try{const todo=[];
+    for(const[c,list]of[["obs",S.obs],["camobs",S.camobs]])for(const r of list||[]){
+      if(r.weather||r.weatherStatus==="none"||(WX.tries[r.id]||0)>=3)continue;const pos=wxPos(c,r),tm=wxTime(c,r);if(!pos||!tm)continue;todo.push([c,r,pos,tm])}
+    for(const[c,r,pos,tm]of todo.slice(0,25)){try{const w=await wxFetch(pos[0],pos[1],tm.t,tm.tz);
+        await S.db.collection(c).doc(r.id).update({weather:w,weatherStatus:"done"});r.weather=w;n++}
+      catch(e){WX.tries[r.id]=(WX.tries[r.id]||0)+1;if(!navigator.onLine)break}}
+    if(todo.length>25)wxSoon(20000)}
+  finally{WX.busy=false}
+  if(n&&LS.get("dg_tab","record")==="data")renderList()}
+function wxSoon(ms){clearTimeout(WX.timer);WX.timer=setTimeout(wxFill,ms||4000)}
+window.addEventListener("online",()=>wxSoon(3000));setInterval(()=>wxSoon(1000),300000);
+
 /* ---------- records list ---------- */
 document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;document.querySelectorAll("[data-f]").forEach(x=>x.setAttribute("aria-pressed",x===b));renderList()});
 function recTitle(r){return r.kind==="plant"?esc(r.species):esc(ANIMAL_NAME[r.animal]||r.animal)+" · "+esc(({dung:"dung",tracks:"tracks",browse_marks:"browsing marks",hair:"hair",resting:"resting site"})[r.signType]||r.signType)}
@@ -652,6 +701,7 @@ async function renderList(){const el=$("recList");bkInfo();
     return `<div class="rec"><div class="t">${recTitle(r)}${tag}</div>
       <div class="m">${esc(siteName(r))} ·${esc(r.plot)} · ${esc(HAB_NAME[r.habitat]||r.habitat)} · ${esc(r.season)}</div>
       <div class="m">${isNaN(d)?"":d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}${who?" · "+who:""}</div>
+      ${wxLine(r)}
       ${r.photoId?`<img data-photo="${esc(r.photoId)}" alt="">`:""}${del}</div>`}).join("");
   el.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{const id=b.dataset.del;
     if(S.confirmDel!==id){S.confirmDel=id;renderList();return}
@@ -660,9 +710,9 @@ async function renderList(){const el=$("recList");bkInfo();
 
 /* ---------- CSV ---------- */
 $("csvBtn").onclick=async()=>{if(!S.obs.length){toast("No records to export yet");return}
-  const cols=["createdAt","kind","site","siteName","country","season","habitat","plot","lat","lon","species","certainty","aiSuggestion","aiConfidence","aiAgreed","labId","growth","height","phenology","shootsTotal","used","parts","shootsBrowsed","intensity","canopy","stemDiam","stems","branching","spines","spineLength","leafType","leafLength","leafWidth","leafArea","leafAreaMethod","leafTraits","browseMin","browseMax","biteDiam","signType","animal","count","freshness","notes","photoId"];
+  const cols=["createdAt","kind","site","siteName","country","season","habitat","plot","lat","lon","species","certainty","aiSuggestion","aiConfidence","aiAgreed","labId","growth","height","phenology","shootsTotal","used","parts","shootsBrowsed","intensity","canopy","stemDiam","stems","branching","spines","spineLength","leafType","leafLength","leafWidth","leafArea","leafAreaMethod","leafTraits","browseMin","browseMax","biteDiam","signType","animal","count","freshness","notes","photoId",...WX_COLS];
   const cell=v=>{if(Array.isArray(v))v=v.join("; ");if(v==null)return"";const s=String(v);return/[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
-  const csv=[cols.join(","),...S.obs.map(r=>cols.map(c=>cell(r[c])).join(","))].join("\n");
+  const csv=[cols.join(","),...S.obs.map(r=>cols.map(c=>cell(wxCell(r,c))).join(","))].join("\n");
   if(!S.dl){toast("Export isn't available in this view");return}
   try{await S.dl.save({filename:`davigherbivores_${new Date().toISOString().slice(0,10)}.csv`,data:csv});}catch(e){if(e&&e.code!=="declined")toast("Export failed: "+(e.message||e.code))}};
 
@@ -936,7 +986,7 @@ $("cSaveAll").onclick=async()=>{const cam=S.cams.find(c=>c.id===$("cCam").value)
   S.camBusy=true;renderQueue();const keepPh=$("cKeepPh").checked&&!!S.assets;let n=0,fail=0;
   for(const x of items){try{let photoId=null;if(keepPh){const b=x.small||await compress(x.file,1280,.75);photoId=(await S.assets.upload(b)).id}
       const r={id:uid(),cam:cam.id,camId:cam.camId,site:cam.site,plot:cam.plot||"",takenAt:x.takenAt,timeSource:x.tsrc,species:x.species.trim(),count:Math.max(1,parseInt(x.count)||1),
-        certainty:x.status==="done"&&!x.empty?x.conf:"manual",aiSpecies:x.aiSp||null,aiAgreed:x.aiSp?x.aiSp.toLowerCase()===x.species.trim().toLowerCase():null,photoId,createdAt:new Date().toISOString()};if(S.myId)r.observerId=S.myId;
+        certainty:x.status==="done"&&!x.empty?x.conf:"manual",aiSpecies:x.aiSp||null,aiAgreed:x.aiSp?x.aiSp.toLowerCase()===x.species.trim().toLowerCase():null,photoId,lat:cam.lat??null,lon:cam.lon??null,weatherStatus:cam.lat!=null&&cam.lon!=null?"pending":"none",createdAt:new Date().toISOString()};if(S.myId)r.observerId=S.myId;
       await S.db.collection("camobs").doc(r.id).set(r);x.saved=true;n++}catch(e){fail++}}
   S.q.filter(x=>x.saved).forEach(x=>URL.revokeObjectURL(x.thumb));S.q=S.q.filter(x=>!x.saved);S.camBusy=false;renderQueue();
   toast(fail?`Saved ${n}, ${fail} failed. Try saving again`:`Saved ${n} detection${n===1?"":"s"}`)};
@@ -995,8 +1045,8 @@ function renderCams(){fillCamSites();const site=$("cSite").value,cams=siteCams(s
   out.innerHTML=h;const ca=$("cAct");if(ca)ca.onchange=()=>{S.actSp=ca.value;renderCams()}}
 $("camCsv").onclick=async()=>{const site=$("cSite").value,rows=S.camobs.filter(d=>d.site===site);if(!rows.length){toast("No camera records to export for this site");return}
   if(!S.dl){toast("Export isn't available in this view");return}
-  const cols=["site","plot","camId","takenAt","timeSource","species","count","certainty","photoId","createdAt"],cell=v=>{if(v==null)return"";const s=String(v);return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
-  const csv=[cols.join(","),...rows.sort((a,b)=>a.takenAt<b.takenAt?-1:1).map(r=>cols.map(c=>cell(r[c])).join(","))].join("\n");
+  const cols=["site","plot","camId","takenAt","timeSource","species","count","certainty","photoId","createdAt",...WX_COLS.filter(c=>c.startsWith("wx_"))],cell=v=>{if(v==null)return"";const s=String(v);return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const csv=[cols.join(","),...rows.sort((a,b)=>a.takenAt<b.takenAt?-1:1).map(r=>cols.map(c=>cell(wxCell(r,c))).join(","))].join("\n");
   try{await S.dl.save({filename:`davigherbivores_cameras_${site}_${new Date().toISOString().slice(0,10)}.csv`,data:csv})}catch(e){if(e&&e.code!=="declined")toast("Export failed: "+(e.message||e.code))}};
 
 /* ---------- leaf size from a photo ----------
@@ -1270,11 +1320,11 @@ function showGate(which){document.body.classList.toggle("signedout",which!=="app
 
 function startData(){const db=S.db,tab=()=>LS.get("dg_tab","record"),pend=(k,snap)=>{S.pend[k]=snap.docs.filter(d=>d.pending).length;updatePill()};
   db.collection("sites").onSnapshot(snap=>{S.sites=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.name).localeCompare(String(b.name)));LS.set("dg_sites",S.sites);fillSites();const t=tab();if(t==="pheno")renderPheno();if(t==="cams")renderCams()});
-  db.collection("obs").onSnapshot(snap=>{pend("obs",snap);S.obs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));updateSpeciesList();fillAnimals();
+  db.collection("obs").onSnapshot(snap=>{pend("obs",snap);wxSoon();S.obs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));updateSpeciesList();fillAnimals();
     const t=tab();if(t==="data")renderList();if(t==="analysis")renderAnalysis();if(t==="pheno")renderPheno();if(t==="cams")renderCams()},
     err=>toast(err&&err.code==="permission-denied"?"Your account can't read the shared records. Ask your project leader":"Lost connection to the shared records"));
   db.collection("cams").onSnapshot(snap=>{pend("cams",snap);S.cams=snap.docs.map(d=>({id:d.id,...d.data()}));LS.set("dg_cams",S.cams);if(tab()==="cams")renderCams()});
-  db.collection("camobs").onSnapshot(snap=>{pend("camobs",snap);S.camobs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.takenAt).localeCompare(String(a.takenAt)));if(tab()==="cams")renderCams()});
+  db.collection("camobs").onSnapshot(snap=>{pend("camobs",snap);wxSoon();S.camobs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.takenAt).localeCompare(String(a.takenAt)));if(tab()==="cams")renderCams()});
   db.collection("photos").limit(1).onSnapshot(()=>{});
   db.collection("nutrition").onSnapshot(snap=>{S.nutr=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));if(tab()==="analysis")renderAnalysis()});
   db.collection("pheno").onSnapshot(snap=>{S.pheno=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));LS.set("dg_pheno",S.pheno);if(tab()==="pheno")renderPheno()});
