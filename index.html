@@ -196,6 +196,19 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
       <input id="nwPhoto" type="file" accept="image/*" hidden>
       <button id="nwPost" class="btn small" type="button" style="justify-self:start">Publish news</button>
       <div id="nwList" style="display:grid;gap:6px"></div></div></details>
+    <details class="morph"><summary>Field status and survey progress</summary><div style="display:grid;gap:8px;padding:10px">
+      <label for="fsState">Status shown on the website<select id="fsState"><option value="">Don't show</option><option value="field">Team in the field</option><option value="lab">Working in the laboratory</option><option value="writing">Analysing and writing</option><option value="off">Between field seasons</option></select></label>
+      <label for="fsWhere">Where (optional)<input id="fsWhere" maxlength="60" placeholder="Makuyuni Wildlife Park"></label>
+      <label for="fsWhereSw">Mahali (Kiswahili, optional)<input id="fsWhereSw" maxlength="60" placeholder="Hifadhi ya Wanyamapori Makuyuni"></label>
+      <button id="fsPost" class="btn small" type="button" style="justify-self:start">Update status</button>
+      <hr style="border:0;border-top:1px solid var(--line);width:100%">
+      <p class="hint" style="margin:0">The progress bar shows only a percentage. It counts plots with records at the chosen site since the start date, and updates itself whenever this phone syncs.</p>
+      <label for="pgName">Survey name<input id="pgName" maxlength="60" placeholder="Wet-season survey 2027"></label>
+      <label for="pgNameSw">Jina (Kiswahili, optional)<input id="pgNameSw" maxlength="60"></label>
+      <div class="grid2"><label for="pgSite">Site<select id="pgSite"></select></label><label for="pgTarget">Planned plots<input id="pgTarget" type="number" min="1" inputmode="numeric" placeholder="120"></label></div>
+      <label for="pgStart">Counting from<input id="pgStart" type="date"></label>
+      <div class="row"><button id="pgPost" class="btn small" type="button">Show progress</button><button id="pgStop" class="btn ghost small" type="button">Hide from website</button></div>
+      <p id="pgNow" class="hint" style="margin:0"></p></div></details>
     <details class="morph"><summary>Photo of the month</summary><div style="display:grid;gap:8px;padding:10px">
       <div class="photobtns"><label class="btn ghost small" for="pmPhoto">Choose photo</label><span id="pmPhotoName" class="hint" style="margin:0"></span></div>
       <input id="pmPhoto" type="file" accept="image/*" hidden>
@@ -234,6 +247,7 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
 <!-- RECORD -->
 <section id="tab-record" role="tabpanel">
   <h2>Field record</h2>
+  <div id="wxWarn" class="card" hidden style="border-color:var(--ochre);background:var(--ochre-soft);color:var(--fg);display:grid;gap:4px;margin-bottom:12px"></div>
   <p class="hint">Record every plant in the plot, browsed or not. The analysis compares what was eaten with what was available.</p>
 
   <h3>Plot</h3>
@@ -492,10 +506,16 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
       <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><button id="mapMe" class="btn ghost small" type="button">Show my location</button><span id="mapInfo" class="hint" style="margin:0"></span></div></div>
     <div id="fieldMap" style="height:60vh;min-height:320px;border-radius:12px;border:1px solid var(--line);background:var(--bg)"></div>
     <p class="hint" id="mapStatus" style="margin:0">Map tiles need internet. Plots still save offline.</p>
+    <label style="display:flex;gap:10px;align-items:flex-start;font-weight:400"><input id="shareLoc" type="checkbox" style="width:20px;height:20px;margin-top:2px;flex:none"><span><b>Share my location with the team</b><br><span class="hint" style="margin:0">Only while this app is open, for safety in the field. Team members appear as purple dots for 3 hours after their last update. Turning this off removes your location.</span></span></label>
   </div>
 </section>
 
 <section id="tab-check" role="tabpanel" hidden>
+  <h2>Team notices</h2>
+  <div class="card" style="display:grid;gap:10px;margin-bottom:18px">
+    <form id="ntAdd" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><label for="ntText" style="flex:1 1 220px">New notice<input id="ntText" maxlength="240" placeholder="Meet at the gate at 6:30" autocomplete="off"></label><button class="btn small" type="submit">Post</button></form>
+    <div id="ntList" style="display:grid;gap:8px"></div>
+  </div>
   <h2>Field checklist</h2>
   <p class="hint">Shared with the whole team and saved offline. Ticks sync when the phone is online.</p>
   <div class="card" style="display:grid;gap:12px">
@@ -598,7 +618,7 @@ $("morphBox").addEventListener("toggle",()=>LS.set("dg_morphOpen",$("morphBox").
 
 function setTab(t){document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t?"true":"false"));
   document.querySelectorAll("section[role=tabpanel]").forEach(s=>s.hidden=s.id!=="tab-"+t);LS.set("dg_tab",t);window.scrollTo(0,0);
-  if(t==="analysis")renderAnalysis();if(t==="data")renderList();if(t==="pheno")renderPheno();if(t==="cams")renderCams();if(t==="map")renderMap();if(t==="check")renderCheck()}
+  if(t==="analysis")renderAnalysis();if(t==="data")renderList();if(t==="pheno")renderPheno();if(t==="cams")renderCams();if(t==="map")renderMap().then(drawTeam);if(t==="check"){renderCheck();renderNotices()}if(t==="record")wxWarn()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 
 function setKind(k){S.kind=k;$("kindPlant").setAttribute("aria-pressed",k==="plant");$("kindSign").setAttribute("aria-pressed",k==="sign");$("plantForm").hidden=k!=="plant";$("signForm").hidden=k!=="sign"}
@@ -614,7 +634,7 @@ function fillSites(){const sel=$("site");const cur=S.pendingSite||sel.value||LS.
   if(cur&&siteOf(cur)){sel.value=cur;if(S.pendingSite===cur){S.pendingSite=null;LS.set("dg_plot",Object.fromEntries(PLOT.map(x=>[x,$(x).value])))}}
   const a=$("aSite"),ac=a.value;a.innerHTML=`<option value="">All sites</option>`+S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join("");a.value=ac;
   fillAnimals()}
-function fillAnimals(){if(typeof updateSpeciesList==="function")updateSpeciesList();const id=$("site").value,s=siteOf(id);
+function fillAnimals(){if(typeof updateSpeciesList==="function")updateSpeciesList();if(typeof wxWarn==="function")setTimeout(wxWarn,0);const id=$("site").value,s=siteOf(id);
   const set=new Set([...((s&&s.animals)||[]),...S.obs.filter(r=>r.kind==="sign"&&r.site===id&&r.animal).map(r=>r.animal),"Unknown"]);
   $("animalList").innerHTML=[...set].map(a=>`<option value="${esc(a)}">`).join("")}
 $("addSiteBtn").onclick=()=>{$("addSiteBox").hidden=false;$("addSiteBtn").hidden=true;$("nsName").focus()};
@@ -891,6 +911,73 @@ $("pmPost").onclick=async()=>{if(!WB.pmImg){toast("Choose a photo first");return
   $("pmPost").disabled=true;try{await S.db.collection("site").doc("photoOfMonth").set({photo:WB.pmImg,capEn:cap,capSw:$("pmCapSw").value.trim()||null,date:new Date().toISOString(),by:S.myId});WB.pmImg=null;$("pmPhoto").value="";$("pmPhotoName").textContent="";["pmCap","pmCapSw"].forEach(k=>$(k).value="");toast("Photo of the month published")}finally{$("pmPost").disabled=false}};
 $("pmRemove").onclick=async()=>{if($("pmRemove").dataset.sure!=="1"){$("pmRemove").dataset.sure="1";$("pmRemove").textContent="Tap again to remove";setTimeout(()=>{$("pmRemove").dataset.sure="";$("pmRemove").textContent="Remove from website"},4000);return}
   await S.db.collection("site").doc("photoOfMonth").delete();toast("Photo of the month removed")};
+
+
+/* ---------- field status and survey progress (published to the website) ---------- */
+const PG={cfg:null,last:null};
+function pgCount(){const c=PG.cfg;if(!c)return null;const since=c.start||"0000";
+  const plots=new Set((S.obs||[]).filter(r=>r.site===c.site&&String(r.createdAt).slice(0,10)>=since&&r.plot).map(r=>r.plot));
+  return{n:plots.size,pct:Math.max(0,Math.min(100,Math.round(plots.size/Math.max(1,c.target)*100)))}}
+async function pgPublish(force){if(!S.canEdit||!PG.cfg||!PG.cfg.active)return;const r=pgCount();if(!r)return;
+  $("pgNow").textContent=`${r.n} of ${PG.cfg.target} plots (${r.pct}%) at ${siteLabel(siteOf(PG.cfg.site)||{name:PG.cfg.site})}`;
+  if(!force&&PG.last===r.pct)return;PG.last=r.pct;
+  try{await S.db.collection("site").doc("progress").set({...PG.cfg,percent:r.pct,updatedAt:new Date().toISOString()})}catch(e){}}
+function pgFill(){const sel=$("pgSite"),cur=sel.value;sel.innerHTML=S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join("");if(cur)sel.value=cur;
+  const c=PG.cfg;if(c&&document.activeElement.closest&&!document.activeElement.closest("#webBox")){$("pgName").value=c.name||"";$("pgNameSw").value=c.nameSw||"";$("pgTarget").value=c.target||"";$("pgStart").value=c.start||"";if(c.site)sel.value=c.site}
+  if(c&&!c.active)$("pgNow").textContent="Progress is hidden from the website.";}
+function liveStart(){
+  S.db.collection("site").onSnapshot(s=>{const st=s.docs.find(d=>d.id==="status"),pg=s.docs.find(d=>d.id==="progress");
+    if(st){const v=st.data();$("fsState").value=v.state||"";$("fsWhere").value=v.where||"";$("fsWhereSw").value=v.whereSw||""}
+    PG.cfg=pg?(({name,nameSw,site,target,start,active})=>({name,nameSw:nameSw||null,site,target,start,active:active!==false}))(pg.data()):null;if(pg)PG.last=pg.data().percent;pgFill();pgPublish(false)},()=>{})}
+$("fsPost").onclick=async()=>{const st=$("fsState").value;
+  if(!st){await S.db.collection("site").doc("status").delete();toast("Status hidden from the website");return}
+  await S.db.collection("site").doc("status").set({state:st,where:$("fsWhere").value.trim()||null,whereSw:$("fsWhereSw").value.trim()||null,updatedAt:new Date().toISOString()});toast("Status updated on the website")};
+$("pgPost").onclick=async()=>{const name=$("pgName").value.trim(),target=parseInt($("pgTarget").value,10);
+  if(!name||!(target>0)){toast("Add a survey name and the number of planned plots");return}
+  PG.cfg={name,nameSw:$("pgNameSw").value.trim()||null,site:$("pgSite").value,target,start:$("pgStart").value||new Date().toISOString().slice(0,10),active:true};PG.last=null;await pgPublish(true);toast("Progress shown on the website")};
+$("pgStop").onclick=async()=>{if(!PG.cfg){toast("No progress bar on the website");return}PG.cfg.active=false;await S.db.collection("site").doc("progress").set({...PG.cfg,percent:PG.last||0,updatedAt:new Date().toISOString()});toast("Progress hidden from the website")};
+
+/* ---------- team notices (collection "notices") ---------- */
+S.notices=[];
+function renderNotices(){const el=$("ntList");if(!el)return;
+  el.innerHTML=S.notices.length?S.notices.slice(0,30).map(n=>`<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg)"><div>${esc(n.text)}</div>
+    <div class="row" style="justify-content:space-between;margin-top:4px"><small class="hint" style="margin:0">${esc(S.names[n.by]||"Team member")} · ${esc(new Date(n.at).toLocaleString([], {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))}</small>
+    ${n.by===S.myId||S.canEdit?`<button type="button" class="btn ghost small" data-ntdel="${esc(n.id)}" style="padding:2px 8px">Remove</button>`:""}</div></div>`).join(""):`<p class="hint" style="margin:0">No notices yet. Post plans, meeting points or reminders for the team here.</p>`}
+$("ntAdd").addEventListener("submit",async e=>{e.preventDefault();const tx=$("ntText").value.trim();if(!tx)return;$("ntText").value="";
+  await S.db.collection("notices").doc(uid()).set({text:tx,by:S.myId,at:new Date().toISOString()})});
+$("ntList").addEventListener("click",async e=>{const id=e.target.dataset.ntdel;if(id)await S.db.collection("notices").doc(id).delete()});
+
+/* ---------- share location with the team (collection "locations", one doc per person) ---------- */
+const LOC={watch:null,last:null,team:[],layer:null};
+async function locSend(pos){const c=pos.coords,now=Date.now();
+  if(LOC.last&&now-LOC.last.t<60000&&Math.hypot(c.latitude-LOC.last.lat,c.longitude-LOC.last.lon)<0.0002)return;
+  LOC.last={t:now,lat:c.latitude,lon:c.longitude};
+  try{await S.db.collection("locations").doc(S.myId).set({lat:c.latitude,lon:c.longitude,acc:Math.round(c.accuracy),at:new Date().toISOString()})}catch(e){}}
+function locOn(){if(!navigator.geolocation){toast("This phone can't share its location");$("shareLoc").checked=false;return}
+  LOC.watch=navigator.geolocation.watchPosition(locSend,()=>{toast("Location not available. Allow location for this app");$("shareLoc").checked=false;locOff()},{enableHighAccuracy:true,maximumAge:30000,timeout:30000})}
+async function locOff(){if(LOC.watch!=null)navigator.geolocation.clearWatch(LOC.watch);LOC.watch=null;LOC.last=null;try{await S.db.collection("locations").doc(S.myId).delete()}catch(e){}}
+$("shareLoc").checked=LS.get("dg_shareLoc",false)===true;
+$("shareLoc").onchange=()=>{LS.set("dg_shareLoc",$("shareLoc").checked);$("shareLoc").checked?locOn():locOff()};
+function drawTeam(){if(!FM.map||!window.L)return;if(!LOC.layer)LOC.layer=L.layerGroup().addTo(FM.map);LOC.layer.clearLayers();
+  const cut=Date.now()-3*3600e3;LOC.team.filter(p=>p.id!==S.myId&&Date.parse(p.at)>cut).forEach(p=>{
+    L.circleMarker([p.lat,p.lon],{radius:8,color:"#fff",weight:2,fillColor:"#7c3aed",fillOpacity:1}).addTo(LOC.layer)
+     .bindPopup(`<b>${esc(S.names[p.id]||"Team member")}</b><br>${esc(new Date(p.at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}))} · ±${p.acc||"?"} m`)})}
+
+/* ---------- weather warnings for fieldwork (Open-Meteo, cached for an hour) ---------- */
+const WW={cache:{}};
+const WW_KNOWN=[[/makuyuni/i,-3.58,36.10],[/arusha/i,-3.25,36.86],[/valk/i,47.57,19.49]];
+function siteXY(id){const pts=(S.obs||[]).filter(r=>r.site===id&&r.lat!=null&&r.lon!=null);
+  if(pts.length)return[pts.reduce((a,r)=>a+r.lat,0)/pts.length,pts.reduce((a,r)=>a+r.lon,0)/pts.length];
+  const s=siteOf(id),k=s&&WW_KNOWN.find(([re])=>re.test(s.name||""));return k?[k[1],k[2]]:null}
+async function wxWarn(){const box=$("wxWarn");if(!box)return;const id=$("site").value,xy=siteXY(id);if(!xy||!navigator.onLine){box.hidden=true;return}
+  const key=id+":"+new Date().toISOString().slice(0,13);let d=WW.cache[key];
+  if(!d){try{const q=new URLSearchParams({latitude:xy[0].toFixed(3),longitude:xy[1].toFixed(3),daily:"weather_code,precipitation_sum,wind_gusts_10m_max,temperature_2m_max",forecast_days:"2",timezone:"auto",wind_speed_unit:"kmh"});
+    const r=await fetch("https://api.open-meteo.com/v1/forecast?"+q);if(!r.ok)throw 0;d=WW.cache[key]=(await r.json()).daily}catch(e){box.hidden=true;return}}
+  const out=[];["Today","Tomorrow"].forEach((lbl,i)=>{const w=[];
+    if(d.weather_code[i]>=95)w.push("thunderstorms");if(d.precipitation_sum[i]>=20)w.push(`heavy rain (${Math.round(d.precipitation_sum[i])} mm)`);
+    if(d.wind_gusts_10m_max[i]>=50)w.push(`strong wind gusts (${Math.round(d.wind_gusts_10m_max[i])} km/h)`);if(d.temperature_2m_max[i]>=35)w.push(`extreme heat (${Math.round(d.temperature_2m_max[i])} °C)`);
+    if(w.length)out.push(`<div><b>${lbl}:</b> ${w.join(", ")}</div>`)});
+  box.innerHTML=out.length?`<b>⚠ Weather warning for ${esc(siteLabel(siteOf(id)||{name:""}))}</b>${out.join("")}<small class="hint" style="margin:0">Plan fieldwork and safety. Forecast from Open-Meteo for the site area.</small>`:"";box.hidden=!out.length}
 
 /* ---------- CSV ---------- */
 $("csvBtn").onclick=async()=>{if(!S.obs.length){toast("No records to export yet");return}
@@ -1504,12 +1591,15 @@ function showGate(which){document.body.classList.toggle("signedout",which!=="app
 
 function startData(){const db=S.db,tab=()=>LS.get("dg_tab","record"),pend=(k,snap)=>{S.pend[k]=snap.docs.filter(d=>d.pending).length;updatePill()};
   db.collection("sites").onSnapshot(snap=>{S.sites=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.name).localeCompare(String(b.name)));LS.set("dg_sites",S.sites);fillSites();const t=tab();if(t==="pheno")renderPheno();if(t==="cams")renderCams()});
-  db.collection("obs").onSnapshot(snap=>{pend("obs",snap);wxSoon();S.obs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));updateSpeciesList();fillAnimals();
+  db.collection("obs").onSnapshot(snap=>{pend("obs",snap);wxSoon();setTimeout(()=>{pgPublish(false)},500);S.obs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));updateSpeciesList();fillAnimals();
     const t=tab();if(t==="data")renderList();if(t==="analysis")renderAnalysis();if(t==="pheno")renderPheno();if(t==="cams")renderCams()},
     err=>toast(err&&err.code==="permission-denied"?"Your account can't read the shared records. Ask your project leader":"Lost connection to the shared records"));
   db.collection("cams").onSnapshot(snap=>{pend("cams",snap);S.cams=snap.docs.map(d=>({id:d.id,...d.data()}));LS.set("dg_cams",S.cams);if(tab()==="cams")renderCams()});
   db.collection("camobs").onSnapshot(snap=>{pend("camobs",snap);wxSoon();S.camobs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.takenAt).localeCompare(String(a.takenAt)));if(tab()==="cams")renderCams()});
   db.collection("photos").limit(1).onSnapshot(()=>{});
+  db.collection("notices").onSnapshot(snap=>{S.notices=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));renderNotices()},()=>{});
+  db.collection("locations").onSnapshot(snap=>{LOC.team=snap.docs.map(d=>({id:d.id,...d.data()}));drawTeam()},()=>{});
+  if($("shareLoc").checked)locOn();
   db.collection("checklists").onSnapshot(snap=>{S.checks=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));if(tab()==="check")renderCheck()},()=>{});
   db.collection("nutrition").onSnapshot(snap=>{S.nutr=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));if(tab()==="analysis")renderAnalysis()});
   db.collection("pheno").onSnapshot(snap=>{S.pheno=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));LS.set("dg_pheno",S.pheno);if(tab()==="pheno")renderPheno()});
@@ -1527,7 +1617,7 @@ setTab(LS.get("dg_tab","record")==="identify"?"record":LS.get("dg_tab","record")
     if(!u){FB.subs.splice(0).forEach(f=>{try{f()}catch(e){}});S.db=null;showGate("login");updatePill();return}
     Object.assign(S,{db:wrapDb(FB.fs),user:peopleApi,assets:photoStore,sample:null,dl:downloader,myId:u.uid,
       canEdit:!!(window.DG_OWNER_EMAIL&&u.email&&u.email.toLowerCase()===String(window.DG_OWNER_EMAIL).toLowerCase())});
-    $("acctEmail").textContent=u.email||"";$("acctRole").textContent=S.canEdit?"project leader":"field team";$("restoreBox").hidden=!S.canEdit;$("webBox").hidden=!S.canEdit;if(S.canEdit)webStart();
+    $("acctEmail").textContent=u.email||"";$("acctRole").textContent=S.canEdit?"project leader":"field team";$("restoreBox").hidden=!S.canEdit;$("webBox").hidden=!S.canEdit;if(S.canEdit){webStart();liveStart()}
     showGate("app");updatePill();startData();setTab(LS.get("dg_tab","record")==="identify"?"record":LS.get("dg_tab","record"))})})();
 
 /* offline app files */
