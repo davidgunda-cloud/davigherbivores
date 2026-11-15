@@ -68,7 +68,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .photo-prev img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 40px)}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-nav.tabs button{flex:1;min-width:0;border:0;background:transparent;padding:10px 2px 12px;font:inherit;font-size:.74rem;font-weight:700;color:var(--muted);display:grid;justify-items:center;gap:3px;cursor:pointer}
+nav.tabs button{flex:1;min-width:0;letter-spacing:-.01em;border:0;background:transparent;padding:10px 2px 12px;font:inherit;font-size:.74rem;font-weight:700;color:var(--muted);display:grid;justify-items:center;gap:3px;cursor:pointer}
 nav.tabs button[aria-selected="true"]{color:var(--acacia)}
 nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .list{display:grid;gap:8px}
@@ -184,6 +184,27 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
   <label for="acctName">Your name on records<input id="acctName" autocomplete="name" placeholder="e.g. Neema"></label>
   <div class="row"><button id="acctSave" class="btn small" type="button">Save name</button><button id="installBtn" class="btn ghost small" type="button" hidden>Install app</button><button id="signOut" class="btn ghost small" type="button">Sign out</button></div>
   <p id="iosHint" class="hint" hidden style="margin:0">To install on iPhone: tap Share, then “Add to Home Screen”.</p>
+  <div id="webBox" hidden style="display:grid;gap:10px;border-top:1px solid var(--line);padding-top:12px">
+    <b>Post to the website</b>
+    <p class="hint" style="margin:0">What you publish here appears on davigherbivores.org within a minute. Only the project leader sees this. Share news, not data or methods.</p>
+    <details class="morph"><summary>News post</summary><div style="display:grid;gap:8px;padding:10px">
+      <label for="nwTitle">Title (English)<input id="nwTitle" maxlength="90" placeholder="Wet-season fieldwork begins"></label>
+      <label for="nwBody">Text (English)<textarea id="nwBody" rows="3" maxlength="600"></textarea></label>
+      <label for="nwTitleSw">Kichwa (Kiswahili, optional)<input id="nwTitleSw" maxlength="90"></label>
+      <label for="nwBodySw">Maandishi (Kiswahili, optional)<textarea id="nwBodySw" rows="3" maxlength="600"></textarea></label>
+      <div class="photobtns"><label class="btn ghost small" for="nwPhoto">Add photo (optional)</label><span id="nwPhotoName" class="hint" style="margin:0"></span></div>
+      <input id="nwPhoto" type="file" accept="image/*" hidden>
+      <button id="nwPost" class="btn small" type="button" style="justify-self:start">Publish news</button>
+      <div id="nwList" style="display:grid;gap:6px"></div></div></details>
+    <details class="morph"><summary>Photo of the month</summary><div style="display:grid;gap:8px;padding:10px">
+      <div class="photobtns"><label class="btn ghost small" for="pmPhoto">Choose photo</label><span id="pmPhotoName" class="hint" style="margin:0"></span></div>
+      <input id="pmPhoto" type="file" accept="image/*" hidden>
+      <label for="pmCap">Caption (English)<input id="pmCap" maxlength="160" placeholder="Giraffe browsing an acacia at sunrise"></label>
+      <label for="pmCapSw">Maelezo (Kiswahili, optional)<input id="pmCapSw" maxlength="160"></label>
+      <div class="row"><button id="pmPost" class="btn small" type="button">Publish photo</button><button id="pmRemove" class="btn ghost small" type="button">Remove from website</button></div>
+      <p id="pmNow" class="hint" style="margin:0"></p></div></details>
+    <p class="hint" style="margin:0">Photos: remove location data first if you don't want it shared. The app shrinks each photo before publishing.</p>
+  </div>
   <div id="restoreBox" hidden style="display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px">
     <b>Move data from the claude.ai version</b>
     <p class="hint" style="margin:0">In the claude.ai version, tap <b>Back up all data</b> on the Records tab, then choose that file here. Sites, records, cameras, phenology and lab results are copied. Photos stay in the claude.ai version.</p>
@@ -258,7 +279,8 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
   <div id="plantForm" class="card" style="margin-top:10px">
     <div class="grid2">
       <label for="species">Plant species
-        <input id="species" list="speciesList" placeholder="e.g. Vachellia tortilis" autocomplete="off"></label>
+        <input id="species" list="speciesList" placeholder="Start typing: e.g. Vachellia tortilis" autocomplete="off"></label>
+      <p class="hint" style="margin:4px 0 0;grid-column:1/-1">Names come from the project plant guide for this site. Pick one to avoid spelling mistakes, or type a new name.</p>
       <label for="pCert">Identification
         <select id="pCert"><option value="sure">Sure</option><option value="probable">Probable</option><option value="unsure">Unsure</option></select></label>
       <label for="growth">Growth form
@@ -462,6 +484,32 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
 </section>
 
 <!-- CAMERA TRAPS -->
+<section id="tab-map" role="tabpanel" hidden>
+  <h2>Map</h2>
+  <p class="hint">Your plots and cameras for the chosen site. Plots recorded today are green. Tap “Show my location” to see where you are.</p>
+  <div class="card" style="display:grid;gap:10px">
+    <div class="grid2"><label for="mapSite">Site<select id="mapSite"></select></label>
+      <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><button id="mapMe" class="btn ghost small" type="button">Show my location</button><span id="mapInfo" class="hint" style="margin:0"></span></div></div>
+    <div id="fieldMap" style="height:60vh;min-height:320px;border-radius:12px;border:1px solid var(--line);background:var(--bg)"></div>
+    <p class="hint" id="mapStatus" style="margin:0">Map tiles need internet. Plots still save offline.</p>
+  </div>
+</section>
+
+<section id="tab-check" role="tabpanel" hidden>
+  <h2>Field checklist</h2>
+  <p class="hint">Shared with the whole team and saved offline. Ticks sync when the phone is online.</p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="grid2"><label for="ckSeason">Field season<select id="ckSeason"></select></label>
+      <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><button id="ckNewSeason" class="btn ghost small" type="button">New season</button></div></div>
+    <div id="ckNew" hidden class="grid2"><label for="ckSeasonName">Season name<input id="ckSeasonName" placeholder="Makuyuni wet season 2027"></label>
+      <div style="display:flex;gap:8px;align-items:end"><button id="ckCreate" class="btn small" type="button">Create</button><button id="ckCancel" class="btn ghost small" type="button">Cancel</button></div></div>
+    <div id="ckBody"></div>
+    <form id="ckAdd" class="grid2" style="align-items:end"><label for="ckText">Add an item<input id="ckText" placeholder="e.g. Spare GPS batteries" autocomplete="off"></label>
+      <label for="ckGroup">Group<select id="ckGroup"><option>Equipment</option><option>Before leaving</option><option>Daily</option><option>Plots</option><option>After fieldwork</option></select></label>
+      <button class="btn small" type="submit" style="justify-self:start">Add</button></form>
+  </div>
+</section>
+
 <section id="tab-cams" role="tabpanel" hidden>
   <h2>Camera traps</h2>
   <p class="hint">Register each camera, load the photos from its card, and enter the species in each photo. Results show detection rates, daily activity, and links to browsing and phenology.</p>
@@ -511,6 +559,8 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
   <button role="tab" data-tab="data" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Records</button>
   <button role="tab" data-tab="analysis" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Analysis</button>
   <button role="tab" data-tab="pheno" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 6-14 15-14 0 9-6 14-14 14"/><path d="M5 19l8-8"/></svg>Phenology</button>
+  <button role="tab" data-tab="map" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Map</button>
+  <button role="tab" data-tab="check" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>Checklist</button>
   <button role="tab" data-tab="cams" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Cameras</button>
 </nav>
 <div id="toast" class="toast" hidden role="status"></div>
@@ -522,6 +572,8 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+var GUIDE_TZ=["Abutilon mauritianum", "Acacia gerrardii", "Acacia mellifera", "Acacia robusta", "Acacia senegal", "Acacia sieberiana", "Acacia tortilis", "Achyranthes aspera", "Albizia amara", "Allophylus rubifolius", "Amaranthus hybridus", "Aristida adscensionis", "Aspilia mombasae", "Azanza garckeana", "Balanites aegyptiaca", "Bidens pilosa", "Blepharis maderaspatensis", "Bothriochloa radicans", "Bothriocline fusca", "Brachiaria brizantha", "Byrsocarpus boivinianus", "Calotropis gigantea", "Calotropis procera", "Cassia mimosoides", "Cenchrus ciliaris", "Cenchrus purpureus", "Chamaecrista mimosoides", "Chloris gayana", "Chloris pycnothrix", "Chloris virgata", "Combretum fragrans", "Combretum molle", "Combretum psidioides", "Commiphora africana", "Commiphora mollis", "Commiphora trothae", "Corchorus fascicularis", "Crassocephalum vitellinum", "Crotalaria laburnifolia", "Crotalaria palliola", "Crotalaria spinosa", "Cucumis prophetarum", "Cyathula polycephala", "Cymbopogon giganteus", "Cynodon dactylon", "Cynodon nlemfuensis", "Dactyloctenium aegyptium", "Dactyloctenium giganteum", "Dalbergia melanoxylon", "Datura stramonium", "Dichrostachys cinerea", "Digera muricata", "Digitaria debilis", "Digitaria milanjiana", "Dolichos oliveri", "Eleusine indica", "Enteropogon macrostachyus", "Eragrostis aspera", "Eragrostis superba", "Ethulia scheffleri", "Euphorbia nyikae", "Flueggea virosa", "Galactia argentifolia", "Gardenia volkensii", "Grewia bicolor", "Grewia microthyrsa", "Grewia occidentalis", "Grewia similis", "Grewia villosa", "Gutenbergia fischeri", "Gymnosporia senegalensis", "Haplocoelum inoploeum", "Harrisonia abyssinica", "Helichrysum brownei", "Heliotropium eduardii", "Heliotropium steudneri", "Heteropogon contortus", "Hibiscus cannabinus", "Hibiscus migeodii", "Hoslundia opposita", "Hyparrhenia rufa", "Hypoestes forskaolii", "Indigofera arrecta", "Ipomoea garckeana", "Justicia myasae", "Kleinia squarrosa", "Lannea edulis", "Lannea fulva", "Lannea schweinfurthii", "Lannea stuhlmannii", "Launaea cornuta", "Leonotis mollissima", "Leonotis nepetifolia", "Lepturus radicans", "Leucas deflexa", "Leucas glabra", "Lippia javanica", "Lonchocarpus capassa", "Maytenus senegalensis", "Megathyrsus maximus", "Melhania ovata", "Melhania parviflora", "Melinis repens", "Mollugo nudicaulis", "Ocimum gratissimum", "Ocimum suave", "Oldenlandia friesiorum", "Ormocarpum kirkii", "Ormocarpum trichocarpum", "Orthosiphon pallidus", "Ozoroa obovata", "Ozoroa reticulata", "Panicum coloratum", "Panicum deustum", "Panicum infestum", "Panicum massaiense", "Panicum maximum", "Panicum oleustum", "Pappea capensis", "Pavonia gallaensis", "Pavonia urens", "Pennisetum purpureum", "Perotis leptopus", "Pupalia lappacea", "Rhus longipes", "Rhynchelytrum repens", "Rottboellia cochinchinensis", "Rottboellia exaltata", "Schizachyrium sanguineum", "Sclerocarya birrea", "Searsia longipes", "Senegalia mellifera", "Senegalia senegal", "Setaria pallidifusca", "Sida acuta", "Sida ovata", "Solanum incanum", "Sorghastrum bipennatum", "Sorghum versicolor", "Sporobolus fimbriatus", "Sporobolus ioclados", "Tagetes minuta", "Tephrosia pumila", "Tephrosia villosa", "Terminalia brachystemma", "Terminalia brownii", "Terminalia mollis", "Terminalia stenostachya", "Themeda triandra", "Tragia furialis", "Tridax procumbens", "Triumfetta flavescens", "Urochloa brizantha", "Urochloa trichopus", "Vachellia gerrardii", "Vachellia robusta", "Vachellia sieberiana", "Vachellia tortilis", "Vernonia brachycalyx", "Xeromphis obovata", "Ximenia caffra", "Zanthoxylum chalybeum"];
+var GUIDE_HU=["Acer campestre", "Acer platanoides", "Ailanthus altissima", "Alnus glutinosa", "Anemone ranunculoides", "Asclepias syriaca", "Brachypodium pinnatum", "Caltha palustris", "Carex acutiformis", "Carex digitata", "Carex pilosa", "Carex riparia", "Carpinus betulus", "Carpinus spp.", "Celtis occidentalis", "Circaea lutetiana", "Cleistogenes serotina", "Cornus sanguinea", "Corydalis cava", "Corydalis solida", "Crataegus monogyna", "Crataegus spp.", "Epipactis neglecta", "Epipactis pseudopurpurata", "Epipactis voethii", "Euonymus verrucosus", "Festuca gigantea", "Festuca rupicola", "Filipendula ulmaria", "Frangula alnus", "Fraxinus excelsior", "Fraxinus ornus", "Fraxinus spp.", "Geranium sanguineum", "Hordelymus europaeus", "Isopyrum thalictroides", "Lathraea squamaria", "Ligustrum spp.", "Melica transsylvanica", "Mycelis muralis", "Populus canescens", "Populus nigra", "Prunus avium", "Prunus padus", "Prunus serotina", "Prunus spinosa", "Prunus spp.", "Pyrus pyraster", "Quercus petraea", "Quercus pubescens", "Quercus robur", "Quercus spp.", "Robinia pseudoacacia", "Rosa spp.", "Rubus spp.", "Salix cinerea", "Salix fragilis", "Sambucus nigra", "Solidago spp.", "Sorbus torminalis", "Staphylea pinnata", "Stipa pennata", "Stipa pulcherrima", "Tilia cordata", "Tilia spp.", "Viburnum opulus", "Vinca herbacea", "Viola mirabilis", "Viola reichenbachiana"];
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
 const ANIMAL_NAME={};
 const PHENO=[["leafless","Leafless"],["new_leaves","New leaves"],["mature_leaves","Mature leaves"],["senescent","Senescent"],["flowering","Flowering"],["fruiting","Fruiting"]];
@@ -546,7 +598,7 @@ $("morphBox").addEventListener("toggle",()=>LS.set("dg_morphOpen",$("morphBox").
 
 function setTab(t){document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t?"true":"false"));
   document.querySelectorAll("section[role=tabpanel]").forEach(s=>s.hidden=s.id!=="tab-"+t);LS.set("dg_tab",t);window.scrollTo(0,0);
-  if(t==="analysis")renderAnalysis();if(t==="data")renderList();if(t==="pheno")renderPheno();if(t==="cams")renderCams()}
+  if(t==="analysis")renderAnalysis();if(t==="data")renderList();if(t==="pheno")renderPheno();if(t==="cams")renderCams();if(t==="map")renderMap();if(t==="check")renderCheck()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 
 function setKind(k){S.kind=k;$("kindPlant").setAttribute("aria-pressed",k==="plant");$("kindSign").setAttribute("aria-pressed",k==="sign");$("plantForm").hidden=k!=="plant";$("signForm").hidden=k!=="sign"}
@@ -562,7 +614,7 @@ function fillSites(){const sel=$("site");const cur=S.pendingSite||sel.value||LS.
   if(cur&&siteOf(cur)){sel.value=cur;if(S.pendingSite===cur){S.pendingSite=null;LS.set("dg_plot",Object.fromEntries(PLOT.map(x=>[x,$(x).value])))}}
   const a=$("aSite"),ac=a.value;a.innerHTML=`<option value="">All sites</option>`+S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join("");a.value=ac;
   fillAnimals()}
-function fillAnimals(){const id=$("site").value,s=siteOf(id);
+function fillAnimals(){if(typeof updateSpeciesList==="function")updateSpeciesList();const id=$("site").value,s=siteOf(id);
   const set=new Set([...((s&&s.animals)||[]),...S.obs.filter(r=>r.kind==="sign"&&r.site===id&&r.animal).map(r=>r.animal),"Unknown"]);
   $("animalList").innerHTML=[...set].map(a=>`<option value="${esc(a)}">`).join("")}
 $("addSiteBtn").onclick=()=>{$("addSiteBox").hidden=false;$("addSiteBtn").hidden=true;$("nsName").focus()};
@@ -754,6 +806,91 @@ async function renderDash(){const el=$("dashBody");if(!el)return;
    <div><h3>By site</h3>${siteRows?`<div class="tw"><table><thead><tr><th>Site</th><th class="n">Plants</th><th class="n">Signs</th><th class="n">Camera</th><th>Last record</th></tr></thead><tbody>${siteRows}</tbody></table></div>`:`<p class="hint">No records yet.</p>`}</div>
    <div><h3>By team member</h3>${whoRows?`<div class="tw"><table><thead><tr><th>Name</th><th class="n">Records</th><th class="n">7 days</th><th>Last active</th></tr></thead><tbody>${whoRows}</tbody></table></div>`:`<p class="hint">No records yet.</p>`}</div>
    <p class="hint" style="margin:0">Only signed-in team members can see this overview. It is not part of the public website.</p>`}
+
+/* ---------- field map (Leaflet, loaded on first use) ---------- */
+const FM={map:null,layer:null,me:null,loading:null};
+function loadLeaflet(){if(window.L)return Promise.resolve();if(FM.loading)return FM.loading;
+  FM.loading=new Promise((ok,no)=>{const c=document.createElement("link");c.rel="stylesheet";c.href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";document.head.appendChild(c);
+    const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";s.onload=()=>{L.Icon.Default.imagePath="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/";ok()};s.onerror=()=>{FM.loading=null;no()};document.head.appendChild(s)});return FM.loading}
+function plotsFor(site){const by={};const today=new Date().toISOString().slice(0,10);
+  (S.obs||[]).filter(r=>r.site===site&&r.lat!=null&&r.lon!=null).forEach(r=>{const k=r.plot||(r.lat.toFixed(5)+","+r.lon.toFixed(5));
+    const b=by[k]||(by[k]={plot:r.plot||"—",lat:r.lat,lon:r.lon,n:0,last:"",today:false});b.n++;if(String(r.createdAt)>b.last)b.last=String(r.createdAt);if(String(r.createdAt).slice(0,10)===today)b.today=true});
+  return Object.values(by)}
+async function renderMap(){
+  const sel=$("mapSite"),cur=sel.value||$("site").value||(S.sites[0]||{}).id||"";
+  sel.innerHTML=S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join("");sel.value=cur;
+  try{await loadLeaflet()}catch(e){$("mapStatus").textContent="The map could not load. Check your internet connection and open this tab again.";return}
+  if(!FM.map){FM.map=L.map("fieldMap");L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(FM.map);FM.layer=L.layerGroup().addTo(FM.map)}
+  setTimeout(()=>FM.map.invalidateSize(),50);
+  FM.layer.clearLayers();const site=sel.value,pts=plotsFor(site),bounds=[];
+  pts.forEach(p=>{const c=p.today?"#2e8b46":"#b8742a";L.circleMarker([p.lat,p.lon],{radius:8,color:"#fff",weight:2,fillColor:c,fillOpacity:.95}).addTo(FM.layer)
+    .bindPopup(`<b>${esc(p.plot)}</b><br>${p.n} record${p.n===1?"":"s"}<br>Last: ${esc(new Date(p.last).toLocaleString())}`);bounds.push([p.lat,p.lon])});
+  (S.cams||[]).filter(c=>c.site===site&&c.lat!=null&&c.lon!=null).forEach(c=>{L.marker([c.lat,c.lon]).addTo(FM.layer).bindPopup(`<b>Camera ${esc(c.camId||"")}</b>`);bounds.push([c.lat,c.lon])});
+  const done=pts.filter(p=>p.today).length;$("mapInfo").textContent=`${pts.length} plot${pts.length===1?"":"s"} · ${done} today`;
+  $("mapStatus").textContent=pts.length?"Green: recorded today. Brown: recorded earlier. Tap a dot for details.":"No plots with GPS for this site yet. Use “Use my location” on the Record tab when you save a record.";
+  if(bounds.length)FM.map.fitBounds(bounds,{padding:[30,30],maxZoom:17});else{const st=siteOf(site);FM.map.setView([st&&st.lat||0,st&&st.lon||20],st&&st.lat?12:2)}
+}
+$("mapSite").onchange=renderMap;
+$("mapMe").onclick=()=>{if(!navigator.geolocation){toast("This phone can't share its location");return}
+  $("mapMe").disabled=true;navigator.geolocation.getCurrentPosition(async pos=>{$("mapMe").disabled=false;try{await loadLeaflet()}catch(e){return}if(!FM.map)await renderMap();
+    const ll=[pos.coords.latitude,pos.coords.longitude];if(FM.me)FM.me.remove();FM.me=L.circleMarker(ll,{radius:9,color:"#fff",weight:3,fillColor:"#2563eb",fillOpacity:1}).addTo(FM.map).bindPopup(`You are here (±${Math.round(pos.coords.accuracy)} m)`);FM.map.setView(ll,Math.max(FM.map.getZoom(),16))},
+    ()=>{$("mapMe").disabled=false;toast("Location not available. Allow location for this app and try again")},{enableHighAccuracy:true,timeout:15000})};
+
+/* ---------- field season checklist (shared, collection "checklists") ---------- */
+const CK_DEFAULT=[["Equipment","GPS or phone with GPS, charged"],["Equipment","Power bank and spare batteries"],["Equipment","Measuring tape and height pole"],["Equipment","Sample bags, labels and marker"],["Equipment","Camera traps, SD cards and locks"],["Equipment","Data sheets as backup"],
+ ["Before leaving","Permits and letters on hand"],["Before leaving","App synced and signed in on every phone"],["Before leaving","Plot list for this season"],["Before leaving","Team and transport confirmed"],
+ ["Daily","Phones charged before leaving camp"],["Daily","All records show Synced at the end of the day"],["Daily","Samples labelled and stored dry"],
+ ["After fieldwork","Camera photos uploaded"],["After fieldwork","Samples delivered to the laboratory"],["After fieldwork","Backup downloaded"]];
+S.checks=[];
+function ckSeason(){return $("ckSeason").value}
+function renderCheck(){
+  const sel=$("ckSeason"),cur=sel.value||LS.get("dg_ck","");
+  sel.innerHTML=S.checks.length?S.checks.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join(""):`<option value="">No season yet: create one</option>`;
+  if(S.checks.some(c=>c.id===cur))sel.value=cur;
+  const c=S.checks.find(x=>x.id===sel.value),body=$("ckBody");$("ckAdd").hidden=!c;
+  if(!c){body.innerHTML=`<p class="hint" style="margin:0">Create a season to start a checklist. It comes with a starter list you can change.</p>`;return}
+  const items=c.items||[],done=items.filter(i=>i.done).length,groups=[...new Set(items.map(i=>i.group))];
+  body.innerHTML=`<div class="hint" style="margin:0 0 6px"><b>${done} of ${items.length}</b> done</div><div style="height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin-bottom:12px"><div style="height:100%;width:${items.length?Math.round(done/items.length*100):0}%;background:var(--acacia)"></div></div>`+
+   groups.map(g=>`<h3 style="margin:12px 0 6px;font-size:.95rem">${esc(g)}</h3>`+items.map((it,i)=>it.group!==g?"":`<label style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line);font-weight:400">
+      <input type="checkbox" data-ck="${i}" ${it.done?"checked":""} style="width:20px;height:20px;margin-top:2px;flex:none">
+      <span style="flex:1;${it.done?"text-decoration:line-through;color:var(--muted)":""}">${esc(it.text)}${it.done&&it.by?`<br><small class="hint" style="margin:0">${esc(S.names[it.by]||"Team member")}, ${esc(new Date(it.at).toLocaleDateString())}</small>`:""}</span>
+      <button type="button" class="btn ghost small" data-ckdel="${i}" aria-label="Remove ${esc(it.text)}" style="padding:2px 8px">×</button></label>`).join("")).join("");
+}
+async function ckSave(c){try{await S.db.collection("checklists").doc(c.id).set({name:c.name,items:c.items,createdAt:c.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()})}catch(e){toast("Couldn't save the checklist. Check your connection")}}
+$("ckSeason").onchange=()=>{LS.set("dg_ck",ckSeason());renderCheck()};
+$("ckNewSeason").onclick=()=>{$("ckNew").hidden=false;$("ckSeasonName").focus()};
+$("ckCancel").onclick=()=>{$("ckNew").hidden=true};
+$("ckCreate").onclick=async()=>{const n=$("ckSeasonName").value.trim();if(!n){toast("Give the season a name");return}
+  const c={id:uid(),name:n,items:CK_DEFAULT.map(([g,t])=>({group:g,text:t,done:false})),createdAt:new Date().toISOString()};
+  S.checks.push(c);LS.set("dg_ck",c.id);$("ckNew").hidden=true;$("ckSeasonName").value="";renderCheck();$("ckSeason").value=c.id;renderCheck();await ckSave(c);toast("Checklist created")};
+$("ckBody").addEventListener("change",async e=>{const i=e.target.dataset.ck;if(i==null)return;const c=S.checks.find(x=>x.id===ckSeason());if(!c)return;
+  const it=c.items[+i];it.done=e.target.checked;it.by=it.done?S.myId:null;it.at=it.done?new Date().toISOString():null;renderCheck();await ckSave(c)});
+$("ckBody").addEventListener("click",async e=>{const i=e.target.dataset.ckdel;if(i==null)return;e.preventDefault();const c=S.checks.find(x=>x.id===ckSeason());if(!c)return;
+  c.items.splice(+i,1);renderCheck();await ckSave(c)});
+$("ckAdd").addEventListener("submit",async e=>{e.preventDefault();const t2=$("ckText").value.trim();const c=S.checks.find(x=>x.id===ckSeason());if(!t2||!c)return;
+  c.items.push({group:$("ckGroup").value,text:t2,done:false});$("ckText").value="";renderCheck();await ckSave(c)});
+
+
+/* ---------- post to the website (project leader only; collections "news" and "site") ---------- */
+const WB={news:[],started:false,nwImg:null,pmImg:null};
+async function webImg(file,max){const b=await compress(file,max,.78);let d=await blobToDataURL(b);
+  for(let i=0;d.length>700000&&i<3;i++){d=await blobToDataURL(await compress(file,[900,720,560][i],.65))}return d}
+function webStart(){if(WB.started)return;WB.started=true;
+  S.db.collection("news").onSnapshot(s=>{WB.news=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.date).localeCompare(String(a.date)));webList()},()=>{});
+  S.db.collection("site").onSnapshot(s=>{const d=s.docs.find(x=>x.id==="photoOfMonth");const v=d&&d.data();$("pmNow").textContent=v&&v.photo?`On the website now: “${v.capEn||"untitled"}” (${new Date(v.date).toLocaleDateString()})`:"No photo of the month on the website yet."},()=>{})}
+function webList(){$("nwList").innerHTML=WB.news.length?`<b style="font-size:.9rem">Published</b>`+WB.news.map(n=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span>${esc(n.titleEn)}<br><small class="hint" style="margin:0">${esc(new Date(n.date).toLocaleDateString())}</small></span><button class="btn ghost small" type="button" data-nwdel="${esc(n.id)}">Remove</button></div>`).join(""):""}
+$("nwPhoto").onchange=async e=>{const f=e.target.files[0];if(!f)return;$("nwPhotoName").textContent="Preparing…";try{WB.nwImg=await webImg(f,1000);$("nwPhotoName").textContent=f.name}catch(_){WB.nwImg=null;$("nwPhotoName").textContent="That photo couldn't be read"}};
+$("pmPhoto").onchange=async e=>{const f=e.target.files[0];if(!f)return;$("pmPhotoName").textContent="Preparing…";try{WB.pmImg=await webImg(f,1400);$("pmPhotoName").textContent=f.name}catch(_){WB.pmImg=null;$("pmPhotoName").textContent="That photo couldn't be read"}};
+$("nwPost").onclick=async()=>{const ti=$("nwTitle").value.trim(),bo=$("nwBody").value.trim();if(!ti||!bo){toast("Add an English title and text");return}
+  const doc={titleEn:ti,bodyEn:bo,titleSw:$("nwTitleSw").value.trim()||null,bodySw:$("nwBodySw").value.trim()||null,photo:WB.nwImg||null,date:new Date().toISOString(),by:S.myId};
+  $("nwPost").disabled=true;try{await S.db.collection("news").doc(uid()).set(doc);["nwTitle","nwBody","nwTitleSw","nwBodySw"].forEach(k=>$(k).value="");WB.nwImg=null;$("nwPhoto").value="";$("nwPhotoName").textContent="";toast("Published. It shows on the website when this phone is online")}finally{$("nwPost").disabled=false}};
+$("nwList").addEventListener("click",async e=>{const id=e.target.dataset.nwdel;if(!id)return;
+  if(e.target.dataset.sure!=="1"){e.target.dataset.sure="1";e.target.textContent="Tap again to remove";setTimeout(()=>{if(e.target.isConnected){e.target.dataset.sure="";e.target.textContent="Remove"}},4000);return}
+  await S.db.collection("news").doc(id).delete();toast("Removed from the website")});
+$("pmPost").onclick=async()=>{if(!WB.pmImg){toast("Choose a photo first");return}const cap=$("pmCap").value.trim();if(!cap){toast("Add an English caption");return}
+  $("pmPost").disabled=true;try{await S.db.collection("site").doc("photoOfMonth").set({photo:WB.pmImg,capEn:cap,capSw:$("pmCapSw").value.trim()||null,date:new Date().toISOString(),by:S.myId});WB.pmImg=null;$("pmPhoto").value="";$("pmPhotoName").textContent="";["pmCap","pmCapSw"].forEach(k=>$(k).value="");toast("Photo of the month published")}finally{$("pmPost").disabled=false}};
+$("pmRemove").onclick=async()=>{if($("pmRemove").dataset.sure!=="1"){$("pmRemove").dataset.sure="1";$("pmRemove").textContent="Tap again to remove";setTimeout(()=>{$("pmRemove").dataset.sure="";$("pmRemove").textContent="Remove from website"},4000);return}
+  await S.db.collection("site").doc("photoOfMonth").delete();toast("Photo of the month removed")};
 
 /* ---------- CSV ---------- */
 $("csvBtn").onclick=async()=>{if(!S.obs.length){toast("No records to export yet");return}
@@ -1284,7 +1421,7 @@ $("bkBtn").onclick=async()=>{if(!S.dl){toast("Backup isn't available in this vie
   catch(e){if(!(e&&e.code==="declined"))toast("Backup failed. Check your connection and try again")}finally{$("bkBtn").disabled=false}};
 
 /* ---------- species suggestions ---------- */
-function updateSpeciesList(){const set=new Set(S.obs.filter(r=>r.kind==="plant"&&r.species).map(r=>r.species.trim()));$("speciesList").innerHTML=[...set].sort().map(s=>`<option value="${esc(s)}">`).join("")}
+function updateSpeciesList(){const st=siteOf($("site").value)||{};const hu=/hungar|magyar|valk/i.test((st.country||"")+" "+(st.name||""));const set=new Set([...S.obs.filter(r=>r.kind==="plant"&&r.species).map(r=>r.species.trim()),...(hu?GUIDE_HU:GUIDE_TZ)]);$("speciesList").innerHTML=[...set].sort().map(s=>`<option value="${esc(s)}">`).join("")}
 
 /* ---------- standalone: Firebase connection ---------- */
 /* The app talks to Firestore through a thin adapter with the same calls it used before.
@@ -1373,6 +1510,7 @@ function startData(){const db=S.db,tab=()=>LS.get("dg_tab","record"),pend=(k,sna
   db.collection("cams").onSnapshot(snap=>{pend("cams",snap);S.cams=snap.docs.map(d=>({id:d.id,...d.data()}));LS.set("dg_cams",S.cams);if(tab()==="cams")renderCams()});
   db.collection("camobs").onSnapshot(snap=>{pend("camobs",snap);wxSoon();S.camobs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.takenAt).localeCompare(String(a.takenAt)));if(tab()==="cams")renderCams()});
   db.collection("photos").limit(1).onSnapshot(()=>{});
+  db.collection("checklists").onSnapshot(snap=>{S.checks=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));if(tab()==="check")renderCheck()},()=>{});
   db.collection("nutrition").onSnapshot(snap=>{S.nutr=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));if(tab()==="analysis")renderAnalysis()});
   db.collection("pheno").onSnapshot(snap=>{S.pheno=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));LS.set("dg_pheno",S.pheno);if(tab()==="pheno")renderPheno()});
   db.collection("people").onSnapshot(snap=>{S.people=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));const me=S.people[S.myId];if(me&&!$("acctName").value)$("acctName").value=me.name||""});
@@ -1389,7 +1527,7 @@ setTab(LS.get("dg_tab","record")==="identify"?"record":LS.get("dg_tab","record")
     if(!u){FB.subs.splice(0).forEach(f=>{try{f()}catch(e){}});S.db=null;showGate("login");updatePill();return}
     Object.assign(S,{db:wrapDb(FB.fs),user:peopleApi,assets:photoStore,sample:null,dl:downloader,myId:u.uid,
       canEdit:!!(window.DG_OWNER_EMAIL&&u.email&&u.email.toLowerCase()===String(window.DG_OWNER_EMAIL).toLowerCase())});
-    $("acctEmail").textContent=u.email||"";$("acctRole").textContent=S.canEdit?"project leader":"field team";$("restoreBox").hidden=!S.canEdit;
+    $("acctEmail").textContent=u.email||"";$("acctRole").textContent=S.canEdit?"project leader":"field team";$("restoreBox").hidden=!S.canEdit;$("webBox").hidden=!S.canEdit;if(S.canEdit)webStart();
     showGate("app");updatePill();startData();setTab(LS.get("dg_tab","record")==="identify"?"record":LS.get("dg_tab","record"))})})();
 
 /* offline app files */
