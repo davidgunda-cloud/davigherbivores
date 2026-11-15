@@ -84,6 +84,20 @@ nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 @media (max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
+.dash{padding:12px;display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+.dash>*{min-width:0}
+#teamDash{min-width:0;max-width:100%}
+.dash .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}
+.dash h3{margin:0 0 6px;font-size:.9rem}
+.dash .tw{overflow-x:auto}
+.dash table{width:100%;border-collapse:collapse;font-size:.86rem}
+.dash th,.dash td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.dash th{color:var(--muted);font-weight:600;font-size:.78rem}
+.dash td.n,.dash th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.dash .bars{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px;align-items:end;height:90px}
+.dash .bar{background:var(--acacia);border-radius:3px 3px 0 0;min-height:2px}
+.dash .bar.z{background:var(--line)}
+.dash .bl{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px;font-size:.68rem;color:var(--muted);text-align:center;margin-top:4px}
 .stat b{display:block;font-family:var(--mono);font-size:1.35rem;font-variant-numeric:tabular-nums}
 .stat span{font-size:.8rem;color:var(--muted)}
 .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
@@ -399,6 +413,7 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
 <!-- DATA -->
 <section id="tab-data" role="tabpanel" hidden>
   <h2>Records</h2>
+  <details class="morph" id="teamDash" style="margin-bottom:12px"><summary>Team overview</summary><div id="dashBody" class="dash"></div></details>
   <div class="row" style="justify-content:space-between">
     <div class="seg" role="group" aria-label="Filter" style="flex:1;min-width:220px">
       <button data-f="all" type="button" aria-pressed="true">All</button>
@@ -688,7 +703,7 @@ window.addEventListener("online",()=>wxSoon(3000));setInterval(()=>wxSoon(1000),
 /* ---------- records list ---------- */
 document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;document.querySelectorAll("[data-f]").forEach(x=>x.setAttribute("aria-pressed",x===b));renderList()});
 function recTitle(r){return r.kind==="plant"?esc(r.species):esc(ANIMAL_NAME[r.animal]||r.animal)+" · "+esc(({dung:"dung",tracks:"tracks",browse_marks:"browsing marks",hair:"hair",resting:"resting site"})[r.signType]||r.signType)}
-async function renderList(){const el=$("recList");bkInfo();
+async function renderList(){const el=$("recList");bkInfo();renderDash();
   const pending=S.outbox.map(e=>({...e.r,_pending:true}));
   const rows=[...pending,...S.obs].filter(r=>S.filter==="all"||r.kind===S.filter);
   if(!rows.length){el.innerHTML=`<div class="empty">${S.db||!S.loaded?"No records yet. Saved observations from you and your field team appear here.":"Not connected. Records you save are kept on this phone until a connection is available."}</div>`;return}
@@ -707,6 +722,38 @@ async function renderList(){const el=$("recList");bkInfo();
     if(S.confirmDel!==id){S.confirmDel=id;renderList();return}
     S.confirmDel=null;try{await S.db.collection("obs").doc(id).delete();toast("Deleted")}catch(e){toast("Couldn't delete: you can only delete your own records")}});
   loadPhotos(el)}
+
+/* ---------- team overview (private to the signed-in team) ---------- */
+(()=>{const d=$("teamDash");try{if(LS.get("dg_dash","open")==="open")d.open=true}catch(e){}d.addEventListener("toggle",()=>LS.set("dg_dash",d.open?"open":"closed"))})();
+async function renderDash(){const el=$("dashBody");if(!el)return;
+  const D=864e5,now=Date.now(),obs=S.obs||[],cams=S.camobs||[],all=[...obs,...cams];
+  const ts=r=>Date.parse(r.createdAt||"")||0;
+  const waiting=Object.values(S.pend||{}).reduce((a,b)=>a+b,0)+(S.outbox||[]).length;
+  const wxp=all.filter(r=>!r.weather&&r.weatherStatus==="pending").length;
+  const last7=all.filter(r=>now-ts(r)<7*D).length;
+  const tile=(v,l)=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+  // per site
+  const bySite={};const S0=id=>bySite[id]||(bySite[id]={plants:0,signs:0,cams:0,last:0});
+  obs.forEach(r=>{const s=S0(r.site||"?");r.kind==="plant"?s.plants++:s.signs++;s.last=Math.max(s.last,ts(r))});
+  cams.forEach(r=>{const s=S0(r.site||"?");s.cams++;s.last=Math.max(s.last,ts(r))});
+  // per person
+  const byWho={};all.forEach(r=>{const k=r.observerId||"?";const w=byWho[k]||(byWho[k]={n:0,last:0,wk:0});w.n++;w.wk+=now-ts(r)<7*D?1:0;w.last=Math.max(w.last,ts(r))});
+  const ids=Object.keys(byWho).filter(k=>k!=="?"&&!S.names[k]);
+  if(S.user&&ids.length){try{const ps=await S.user.profiles(ids);ids.forEach(i=>S.names[i]=(ps[i]&&ps[i].name)||"")}catch(e){}}
+  const who=k=>k==="?"?"Not recorded":k===S.myId?(S.names[k]?esc(S.names[k])+" (you)":"You"):esc(S.names[k]||"Team member");
+  const day=v=>v?new Date(v).toLocaleDateString([], {day:"numeric",month:"short",year:"numeric"}):"–";
+  // last 14 days
+  const days=[...Array(14)].map((_,i)=>{const d=new Date(now-(13-i)*D);return d.toISOString().slice(0,10)});
+  const cnt=days.map(k=>all.filter(r=>String(r.createdAt||"").slice(0,10)===k).length),mx=Math.max(1,...cnt);
+  const siteRows=Object.entries(bySite).sort((a,b)=>b[1].last-a[1].last).map(([id,s])=>{const st=siteOf(id);
+    return `<tr><td>${st?siteLabel(st):"Unknown site"}</td><td class="n">${s.plants}</td><td class="n">${s.signs}</td><td class="n">${s.cams}</td><td>${day(s.last)}</td></tr>`}).join("");
+  const whoRows=Object.entries(byWho).sort((a,b)=>b[1].n-a[1].n).map(([k,w])=>`<tr><td>${who(k)}</td><td class="n">${w.n}</td><td class="n">${w.wk}</td><td>${day(w.last)}</td></tr>`).join("");
+  el.innerHTML=`<div class="tiles">${tile(obs.length,"field records")}${tile(cams.length,"camera photos")}${tile(last7,"in the last 7 days")}${tile(waiting,"waiting to sync on this phone")}${tile(wxp,"weather pending")}</div>
+   <div><h3>Last 14 days</h3><div class="bars" role="img" aria-label="Records per day over the last 14 days">${cnt.map((c,i)=>`<div class="bar${c?"":" z"}" style="height:${c?Math.max(6,Math.round(c/mx*100)):2}%" title="${days[i]}: ${c} record${c===1?"":"s"}"></div>`).join("")}</div>
+     <div class="bl">${days.map((k,i)=>`<span>${i%2?"":+k.slice(8)}</span>`).join("")}</div></div>
+   <div><h3>By site</h3>${siteRows?`<div class="tw"><table><thead><tr><th>Site</th><th class="n">Plants</th><th class="n">Signs</th><th class="n">Camera</th><th>Last record</th></tr></thead><tbody>${siteRows}</tbody></table></div>`:`<p class="hint">No records yet.</p>`}</div>
+   <div><h3>By team member</h3>${whoRows?`<div class="tw"><table><thead><tr><th>Name</th><th class="n">Records</th><th class="n">7 days</th><th>Last active</th></tr></thead><tbody>${whoRows}</tbody></table></div>`:`<p class="hint">No records yet.</p>`}</div>
+   <p class="hint" style="margin:0">Only signed-in team members can see this overview. It is not part of the public website.</p>`}
 
 /* ---------- CSV ---------- */
 $("csvBtn").onclick=async()=>{if(!S.obs.length){toast("No records to export yet");return}
