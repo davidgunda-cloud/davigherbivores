@@ -1,0 +1,1400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DaviGherbivores</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f5d3a">
+<meta name="description" content="Field app for ungulate browsing research: plants, animal signs, phenology, camera traps and analysis.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DaviGherbivores">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a field notebook in an app shell — sticky header, one working panel per tab, bottom tab bar for thumbs */
+:root{
+  --bg:#eef1ea; --surface:#fbfcf8; --line:#d3d9cb; --fg:#1f2a1d; --muted:#5d6b58;
+  --acacia:#2f5d3a; --acacia-ink:#ffffff; --ochre:#b5761b; --ochre-soft:#f3e3c4;
+  --good:#2f7d4a; --warn:#a8621a; --bad:#a3392f; --chip:#e3e9dc;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Source Sans 3",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141a13; --surface:#1c241b; --line:#33402f; --fg:#e6ece0; --muted:#9aaa93;
+  --acacia:#7fbf8c; --acacia-ink:#10170f; --ochre:#e0a64a; --ochre-soft:#3a2e18;
+  --good:#7cc795; --warn:#e0a64a; --bad:#e07a6e; --chip:#26311f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a13; --surface:#1c241b; --line:#33402f; --fg:#e6ece0; --muted:#9aaa93;
+  --acacia:#7fbf8c; --acacia-ink:#10170f; --ochre:#e0a64a; --ochre-soft:#3a2e18;
+  --good:#7cc795; --warn:#e0a64a; --bad:#e07a6e; --chip:#26311f; color-scheme:dark}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:16px;line-height:1.45;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:720px;margin:0 auto}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:12px;padding-block:14px 10px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--display);font-weight:800;font-size:clamp(1.05rem,5.2vw,1.45rem);letter-spacing:-.01em;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logo{width:44px;height:44px;border-radius:11px;object-fit:cover;flex:none}
+.brand span{color:var(--ochre)}
+.pill{font-size:.78rem;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--chip);color:var(--muted);white-space:nowrap;border:0;font-family:var(--body)}
+.pill.warn{background:var(--ochre-soft);color:var(--warn);cursor:pointer}
+.pill.ok{color:var(--good)}
+h2{font-family:var(--display);font-weight:600;font-size:1.25rem;margin:22px 0 4px;text-wrap:balance}
+h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px;font-weight:700}
+.hint{color:var(--muted);font-size:.9rem;margin:0 0 10px}
+section[role=tabpanel]{display:flex;flex-direction:column}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.grid2{grid-template-columns:1fr}}
+label{display:grid;gap:4px;font-weight:600;font-size:.9rem;min-width:0}
+input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;box-sizing:border-box;min-width:0}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:7px 12px;font:inherit;font-size:.9rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--acacia);color:var(--acacia-ink);border-color:var(--acacia)}
+.seg{display:flex;background:var(--chip);border-radius:10px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:transparent;padding:9px;border-radius:7px;font:inherit;font-weight:700;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.btn{border:0;border-radius:10px;padding:13px 16px;font:inherit;font-weight:700;cursor:pointer;background:var(--acacia);color:var(--acacia-ink)}
+.btn.ghost{background:transparent;color:var(--acacia);border:1px solid var(--line)}
+.btn.small{padding:7px 12px;font-size:.88rem}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.photo-prev{display:flex;gap:10px;align-items:center}
+.photo-prev img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 40px)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabs button{flex:1;min-width:0;border:0;background:transparent;padding:10px 2px 12px;font:inherit;font-size:.74rem;font-weight:700;color:var(--muted);display:grid;justify-items:center;gap:3px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{color:var(--acacia)}
+nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.list{display:grid;gap:8px}
+.rec{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:start}
+.rec .t{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.rec .m{color:var(--muted);font-size:.85rem;grid-column:1;min-width:0}
+.rec img{grid-row:1/4;grid-column:2;width:56px;height:56px;object-fit:cover;border-radius:8px}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.tag.b{background:var(--ochre-soft);color:var(--warn)}
+.tag.n{background:var(--chip);color:var(--muted)}
+.tag.s{background:var(--chip);color:var(--acacia)}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px}
+.dash{padding:12px;display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+.dash>*{min-width:0}
+#teamDash{min-width:0;max-width:100%}
+.dash .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}
+.dash h3{margin:0 0 6px;font-size:.9rem}
+.dash .tw{overflow-x:auto}
+.dash table{width:100%;border-collapse:collapse;font-size:.86rem}
+.dash th,.dash td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.dash th{color:var(--muted);font-weight:600;font-size:.78rem}
+.dash td.n,.dash th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.dash .bars{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px;align-items:end;height:90px}
+.dash .bar{background:var(--acacia);border-radius:3px 3px 0 0;min-height:2px}
+.dash .bar.z{background:var(--line)}
+.dash .bl{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px;font-size:.68rem;color:var(--muted);text-align:center;margin-top:4px}
+.stat b{display:block;font-family:var(--mono);font-size:1.35rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--muted)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:130px}
+th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.num{font-family:var(--mono)}
+.bars{display:grid;gap:7px}
+.bar{display:grid;grid-template-columns:minmax(90px,38%) 1fr 52px;gap:8px;align-items:center;font-size:.86rem}
+.bar .lab{min-width:0;overflow-wrap:anywhere}
+.bar .track{height:12px;background:var(--chip);border-radius:3px;position:relative;overflow:hidden}
+.bar .fill{position:absolute;top:0;bottom:0;left:0;background:var(--ochre);border-radius:3px}
+.bar .val{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.div .track{background:linear-gradient(to right,var(--chip) 0 calc(50% - 1px),var(--muted) calc(50% - 1px) calc(50% + 1px),var(--chip) calc(50% + 1px))}
+.div .fill.pos{background:var(--acacia)}
+.div .fill.neg{background:var(--bad);opacity:.75}
+.legend{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);padding-left:calc(38% + 8px);padding-right:60px}
+.idres{display:grid;gap:8px}
+.cand{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:4px}
+.cand .n{font-weight:700}
+.conf{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.conf.high{color:var(--good)}.conf.medium{color:var(--warn)}.conf.low{color:var(--bad)}
+.chartwrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 6px 4px;margin-top:12px}
+.chartwrap svg{width:100%;height:auto;display:block}
+.phlegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--muted);margin-top:8px}
+.phlegend span{display:inline-flex;align-items:center;gap:5px}
+.phlegend i{display:inline-block;width:10px;height:10px;border-radius:50%}
+.phlegend i.ln{width:16px;height:0;border-radius:0;border-top:2.5px solid var(--acacia)}
+.phlegend i.ds{width:16px;height:0;border-radius:0;border-top:2.5px dashed var(--ochre)}
+.phlegend i.bd{border-radius:2px;background:var(--ochre-soft);border:1px solid var(--ochre)}
+.stg{font-weight:700}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);pointer-events:none}
+.photobtns{display:flex;flex-wrap:wrap;gap:8px}
+.photobtns label.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:.92rem;font-weight:700;padding:11px 14px}
+.photobtns label.btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.photobtns:focus-within label{outline:2px solid var(--ochre);outline-offset:2px}
+.qitem{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;grid-template-columns:88px 1fr;gap:10px;align-items:start}
+.qitem.skip{opacity:.62}
+.qitem img{width:88px;height:88px;object-fit:cover;border-radius:8px;background:var(--chip)}
+.qbody{display:grid;gap:8px;min-width:0}
+.qbody .m{color:var(--muted);font-size:.82rem;overflow-wrap:anywhere}
+.qrow{display:grid;grid-template-columns:1fr 72px auto;gap:8px;align-items:center}
+.qrow input{padding:8px}
+.keep{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer;background:var(--bg);color:var(--muted)}
+.keep[aria-pressed="true"]{background:var(--acacia);border-color:var(--acacia);color:var(--acacia-ink)}
+.camrow{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px}
+.camrow .t{font-weight:700}
+.camrow .m{color:var(--muted);font-size:.85rem}
+.check{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem}
+.check input{width:auto}
+.acctbtn{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;flex:none}
+.acctbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+body.signedout section[role=tabpanel],body.signedout nav.tabs{display:none!important}
+.sphint{font-size:.88rem;color:var(--warn);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sphint button{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:4px 10px;font:inherit;font-style:italic;cursor:pointer}
+.sel{font-size:.78rem;font-weight:700}
+.sel.pref{color:var(--good)}.sel.avoid{color:var(--bad)}.sel.prop{color:var(--muted)}
+details.morph{border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+details.morph summary{cursor:pointer;padding:11px 12px;font-weight:700;font-size:.92rem;list-style-position:inside}
+details.morph[open] summary{border-bottom:1px solid var(--line)}
+.morphin{padding:12px;display:grid;gap:12px}
+.lt{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.ltc{width:100%;height:auto;border-radius:8px;border:1px solid var(--line);touch-action:manipulation;cursor:crosshair;display:block}
+.ltstep{margin:0;font-weight:700;color:var(--fg)}
+.ltwarn{border:1px solid var(--warn);background:var(--ochre-soft);color:var(--fg);border-radius:8px;padding:8px 10px;font-size:.88rem;display:grid;gap:4px}
+.ltok{color:var(--good);font-weight:700;font-size:.9rem}
+input[type=range]{padding:0;accent-color:var(--acacia)}
+.stat .stg{display:block;font-size:.8rem;margin-top:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <img class="logo" src="data:image/jpeg;base64,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" alt="">
+  <h1 class="brand">DaviG<span>herbivores</span></h1>
+  <button id="syncPill" class="pill" type="button">Connecting…</button>
+  <button id="acctBtn" class="acctbtn" type="button" aria-label="Account" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+</header>
+
+<!-- ACCOUNT -->
+<div id="acct" class="card" hidden style="margin-top:12px">
+  <div class="row" style="justify-content:space-between"><b id="acctEmail"></b><span id="acctRole" class="tag s"></span></div>
+  <label for="acctName">Your name on records<input id="acctName" autocomplete="name" placeholder="e.g. Neema"></label>
+  <div class="row"><button id="acctSave" class="btn small" type="button">Save name</button><button id="installBtn" class="btn ghost small" type="button" hidden>Install app</button><button id="signOut" class="btn ghost small" type="button">Sign out</button></div>
+  <p id="iosHint" class="hint" hidden style="margin:0">To install on iPhone: tap Share, then “Add to Home Screen”.</p>
+  <div id="restoreBox" hidden style="display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px">
+    <b>Move data from the claude.ai version</b>
+    <p class="hint" style="margin:0">In the claude.ai version, tap <b>Back up all data</b> on the Records tab, then choose that file here. Sites, records, cameras, phenology and lab results are copied. Photos stay in the claude.ai version.</p>
+    <div class="photobtns"><label class="btn ghost small" for="restoreFile">Choose backup file</label></div>
+    <input id="restoreFile" class="vh" type="file" accept=".json,application/json">
+    <p id="restoreMsg" class="hint" style="margin:0" role="status"></p>
+  </div>
+</div>
+
+<!-- SIGN IN -->
+<section id="loginBox" hidden>
+  <h2>Sign in</h2>
+  <p class="hint">Use the email and password your project leader gave you. After the first sign-in the app also opens without internet.</p>
+  <form id="loginForm" class="card" novalidate>
+    <label for="lgEmail">Email<input id="lgEmail" type="email" autocomplete="username" inputmode="email" required></label>
+    <label for="lgPass">Password<input id="lgPass" type="password" autocomplete="current-password" required></label>
+    <button id="lgBtn" class="btn" type="submit">Sign in</button>
+    <button id="lgReset" class="btn ghost small" type="button" style="justify-self:start">Forgot password</button>
+    <p id="lgMsg" class="hint" style="margin:0" role="status"></p>
+  </form>
+</section>
+<section id="setupBox" hidden>
+  <h2>Almost ready</h2>
+  <p class="hint">This copy of DaviGherbivores isn't connected to a database yet. Open <b>firebase-config.js</b> and paste the settings from your Firebase project, as described in the setup guide.</p>
+</section>
+
+<!-- RECORD -->
+<section id="tab-record" role="tabpanel">
+  <h2>Field record</h2>
+  <p class="hint">Record every plant in the plot, browsed or not. The analysis compares what was eaten with what was available.</p>
+
+  <h3>Plot</h3>
+  <div class="card">
+    <div class="grid2">
+      <label for="site">Study site
+        <select id="site"><option value="">Loading sites…</option></select></label>
+      <label for="season">Season
+        <select id="season"><optgroup label="Tropical"><option value="dry">Dry season</option><option value="wet">Wet season</option><option value="transition">Transition</option></optgroup><optgroup label="Temperate"><option value="spring">Spring</option><option value="summer">Summer</option><option value="autumn">Autumn</option><option value="winter">Winter</option></optgroup></select></label>
+      <label for="habitat">Habitat
+        <select id="habitat"><option value="forest">Forest / woodland</option><option value="bushland">Bushland / shrubland</option><option value="grassland">Grassland</option><option value="wetland">Wetland / riverine</option><option value="edge">Forest edge / clearing</option><option value="agricultural">Agricultural land</option><option value="other">Other</option></select></label>
+      <label for="plot">Plot ID
+        <input id="plot" placeholder="MK-F-01" autocomplete="off"></label>
+      <label for="lat">Latitude
+        <input id="lat" inputmode="decimal" placeholder="-3.5312"></label>
+      <label for="lon">Longitude
+        <input id="lon" inputmode="decimal" placeholder="36.0874"></label>
+    </div>
+    <button id="gpsBtn" class="btn ghost small" type="button" style="justify-self:start"><span id="gpsLbl">Use my location</span></button>
+    <p class="hint" style="margin:0">Stand at the plot centre and tap Use my location. The plot stays filled in until you change it.</p>
+    <button id="addSiteBtn" class="btn ghost small" type="button" style="justify-self:start">Add a study site</button>
+    <div id="addSiteBox" hidden style="display:grid;gap:12px;border-top:1px solid var(--line);padding-top:12px">
+      <div class="grid2">
+        <label for="nsName">Site name
+          <input id="nsName" placeholder="e.g. Kruger National Park"></label>
+        <label for="nsCountry">Country
+          <input id="nsCountry" placeholder="e.g. South Africa"></label>
+      </div>
+      <label for="nsDesc">Vegetation and climate <span class="hint" style="font-weight:400">(helps photo identification)</span>
+        <input id="nsDesc" placeholder="e.g. Semi-arid mopane savanna"></label>
+      <label for="nsAnimals">Herbivores present <span class="hint" style="font-weight:400">(comma-separated)</span>
+        <textarea id="nsAnimals" rows="2" placeholder="Impala, Kudu, Giraffe, Elephant"></textarea></label>
+      <div class="row"><button id="nsSave" class="btn small" type="button">Save site</button><button id="nsCancel" class="btn ghost small" type="button">Cancel</button></div>
+    </div>
+  </div>
+
+  <h3>Observation</h3>
+  <div class="seg" role="group" aria-label="Observation type">
+    <button id="kindPlant" type="button" aria-pressed="true">Plant</button>
+    <button id="kindSign" type="button" aria-pressed="false">Animal sign</button>
+  </div>
+
+  <div id="plantForm" class="card" style="margin-top:10px">
+    <div class="grid2">
+      <label for="species">Plant species
+        <input id="species" list="speciesList" placeholder="e.g. Vachellia tortilis" autocomplete="off"></label>
+      <label for="pCert">Identification
+        <select id="pCert"><option value="sure">Sure</option><option value="probable">Probable</option><option value="unsure">Unsure</option></select></label>
+      <label for="growth">Growth form
+        <select id="growth"><option value="tree">Tree</option><option value="shrub">Shrub</option><option value="dwarf_shrub">Dwarf shrub</option><option value="forb">Herb / forb</option><option value="grass">Grass</option><option value="sedge">Sedge</option><option value="climber">Climber</option></select></label>
+      <label for="height">Height (cm)
+        <input id="height" type="number" inputmode="decimal" min="0" max="3000"></label>
+    </div>
+    <datalist id="speciesList"></datalist>
+    <div id="spHint" class="sphint" hidden role="status"></div>
+    <div><div style="font-weight:600;font-size:.9rem;margin-bottom:6px">Phenology</div>
+      <div class="chips" id="pheno" data-multi></div></div>
+    <label for="labId">Lab sample ID <span class="hint" style="font-weight:400">(if you took a sample for nutrient analysis)</span>
+      <input id="labId" placeholder="e.g. MK-N-014" autocomplete="off"></label>
+    <details id="morphBox" class="morph">
+      <summary>Plant morphology <span class="hint" style="font-weight:400">(optional)</span></summary>
+      <div class="morphin">
+        <div class="grid2">
+          <label for="canopy">Canopy diameter (cm)
+            <input id="canopy" type="number" inputmode="decimal" min="0" max="5000"></label>
+          <label for="stemD">Stem diameter at base (cm)
+            <input id="stemD" type="number" inputmode="decimal" min="0" max="500" step="0.1"></label>
+          <label for="stems">Number of stems
+            <input id="stems" type="number" inputmode="numeric" min="1" max="500"></label>
+          <label for="branch">Branching
+            <select id="branch"><option value="">Not recorded</option><option value="single">Single stem, open crown</option><option value="multi">Multi-stemmed</option><option value="dense">Dense, cage-like</option><option value="prostrate">Prostrate / creeping</option><option value="tufted">Tufted (grass)</option></select></label>
+          <label for="spines">Spinescence
+            <select id="spines"><option value="">Not recorded</option><option value="none">None</option><option value="straight">Straight thorns / spines</option><option value="hooked">Hooked thorns</option><option value="paired">Paired (straight and hooked)</option><option value="prickles">Prickles</option><option value="spiny_leaves">Spiny leaves</option></select></label>
+          <label for="spineL">Spine length (mm)
+            <input id="spineL" type="number" inputmode="decimal" min="0" max="200"></label>
+          <label for="leafType">Leaf type
+            <select id="leafType"><option value="">Not recorded</option><option value="simple">Simple</option><option value="compound">Compound (pinnate)</option><option value="bipinnate">Bipinnate</option><option value="needle">Needle / scale-like</option><option value="blade">Grass blade</option><option value="leafless">Leafless / photosynthetic stem</option></select></label>
+          <label for="leafL">Leaf or leaflet length (mm)
+            <input id="leafL" type="number" inputmode="decimal" min="0" max="2000"></label>
+          <label for="leafW">Leaf or leaflet width (mm)
+            <input id="leafW" type="number" inputmode="decimal" min="0" max="2000"></label>
+          <label for="leafA">Leaf area (cm²)
+            <input id="leafA" type="number" inputmode="decimal" min="0" max="5000" step="0.01"></label>
+        </div>
+        <button id="ltOpen" class="btn ghost small" type="button" style="justify-self:start">Measure leaf with camera</button>
+        <div id="leafTool" hidden class="lt">
+          <p class="hint" style="margin:0">Lay the leaf flat on white paper. Put a dark reference square, or a coin, beside it without touching. Hold the phone straight above, in shade without hard shadows.</p>
+          <div class="grid2">
+            <label for="ltShape">Reference
+              <select id="ltShape"><option value="square">Square (side length)</option><option value="circle">Circle or coin (diameter)</option></select></label>
+            <label for="ltSize">Reference size (mm)
+              <input id="ltSize" type="number" inputmode="decimal" min="1" step="0.1" value="20"></label>
+          </div>
+          <label for="ltKnown" id="ltKnownWrap" hidden>Known area of the test shape (cm²)
+            <input id="ltKnown" type="number" inputmode="decimal" min="0.1" step="0.01" placeholder="e.g. 16 for a 4 × 4 cm square"></label>
+          <div class="photobtns"><label class="btn" for="ltCam"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Take photo</label><label class="btn ghost" for="ltGal">From gallery</label></div>
+          <input id="ltCam" class="vh" type="file" accept="image/*" capture="environment">
+          <input id="ltGal" class="vh" type="file" accept="image/*">
+          <p id="ltStep" class="ltstep" role="status"></p>
+          <canvas id="ltCanvas" class="ltc" hidden></canvas>
+          <label for="ltSens" id="ltSensWrap" hidden>Edge sensitivity <span class="hint" style="font-weight:400">(raise if the leaf edge is missed, lower if the background is included)</span>
+            <input id="ltSens" type="range" min="-40" max="40" value="0"></label>
+          <label class="check" for="ltHoles"><input id="ltHoles" type="checkbox">Count holes inside the leaf as leaf area</label>
+          <div id="ltRes"></div>
+          <div class="row">
+            <button id="ltUse" class="btn small" type="button" hidden>Use these values</button>
+            <button id="ltCheck" class="btn ghost small" type="button">Accuracy check</button>
+            <button id="ltClose" class="btn ghost small" type="button">Close</button>
+          </div>
+          <div id="ltAcc" class="hint" style="margin:0"></div>
+        </div>
+        <div><div style="font-weight:600;font-size:.9rem;margin-bottom:6px">Leaf and stem surface</div>
+          <div class="chips" id="lTraits" data-multi></div></div>
+        <label class="check" for="morphKeep"><input id="morphKeep" type="checkbox">Keep these values for the next plant</label>
+      </div>
+    </details>
+    <label for="shootsTot">Available shoots
+      <input id="shootsTot" type="number" inputmode="numeric" min="0"></label>
+    <div><div style="font-weight:600;font-size:.9rem;margin-bottom:6px">Browsed or grazed?</div>
+      <div class="seg" role="group" aria-label="Browsed">
+        <button id="usedNo" type="button" aria-pressed="true">No</button>
+        <button id="usedYes" type="button" aria-pressed="false">Yes</button>
+      </div></div>
+    <div id="usedBox" hidden style="display:grid;gap:12px">
+      <div><div style="font-weight:600;font-size:.9rem;margin-bottom:6px">Parts eaten</div><div class="chips" id="parts" data-multi></div></div>
+      <div class="grid2">
+        <label for="shootsBr">Browsed shoots
+          <input id="shootsBr" type="number" inputmode="numeric" min="0"></label>
+        <label for="intens">Intensity (biomass removed)
+          <select id="intens"><option value="1">1 · 1–25%</option><option value="2">2 · 26–50%</option><option value="3">3 · 51–75%</option><option value="4">4 · 76–100%</option></select></label>
+        <label for="brMin">Lowest browsed point (cm)
+          <input id="brMin" type="number" inputmode="decimal" min="0" max="3000"></label>
+        <label for="brMax">Highest browsed point (cm)
+          <input id="brMax" type="number" inputmode="decimal" min="0" max="3000"></label>
+        <label for="biteD">Twig diameter at bite (mm)
+          <input id="biteD" type="number" inputmode="decimal" min="0" max="100" step="0.1"></label>
+      </div>
+    </div>
+  </div>
+
+  <div id="signForm" class="card" style="margin-top:10px" hidden>
+    <div class="grid2">
+      <label for="signType">Type of sign
+        <select id="signType"><option value="dung">Dung / pellets</option><option value="tracks">Tracks</option><option value="browse_marks">Browsing marks</option><option value="hair">Hair</option><option value="resting">Resting site</option></select></label>
+      <label for="animal">Animal
+        <input id="animal" list="animalList" placeholder="Start typing, or Unknown" autocomplete="off"></label>
+      <datalist id="animalList"></datalist>
+      <label for="sCert">Identification
+        <select id="sCert"><option value="sure">Sure</option><option value="probable">Probable</option><option value="unsure">Unsure</option></select></label>
+      <label for="sCount">Count
+        <input id="sCount" type="number" inputmode="numeric" min="0" value="1"></label>
+      <label for="fresh">Freshness
+        <select id="fresh"><option value="fresh">Fresh</option><option value="recent">Recent</option><option value="old">Old</option></select></label>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <div class="photo-prev">
+      <img id="recPhotoPrev" alt="Photo preview" hidden>
+      <div style="flex:1;display:grid;gap:6px;min-width:0"><div style="font-weight:600;font-size:.9rem">Photo <span class="hint" style="font-weight:400">(needed when not sure)</span></div>
+        <div class="photobtns"><label class="btn" for="recPhoto"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Take photo</label><label class="btn ghost" for="recGallery">From gallery</label></div></div>
+      <input id="recPhoto" class="vh" type="file" accept="image/*" capture="environment">
+      <input id="recGallery" class="vh" type="file" accept="image/*">
+    </div>
+    <div class="grid2">
+      <label for="skyObs">Weather now <span class="hint" style="font-weight:400">(what you see)</span>
+        <select id="skyObs"><option value="">Not noted</option><option value="sunny">Sunny</option><option value="partly cloudy">Partly cloudy</option><option value="overcast">Overcast</option><option value="drizzle">Drizzle</option><option value="rain">Rain</option><option value="fog">Fog or mist</option></select></label>
+      <label for="windObs">Wind
+        <select id="windObs"><option value="">Not noted</option><option value="calm">Calm</option><option value="light">Light</option><option value="moderate">Moderate</option><option value="strong">Strong</option></select></label>
+    </div>
+    <p class="hint" style="margin:-4px 0 0">Measured weather (temperature, humidity, rain, cloud, wind) is added automatically from the GPS point, now if online or later when the phone is back online.</p>
+    <label for="notes">Notes
+      <textarea id="notes" rows="2"></textarea></label>
+    <button id="saveBtn" class="btn" type="button">Save record</button>
+  </div>
+</section>
+
+<!-- IDENTIFY -->
+<section id="tab-identify" role="tabpanel" hidden>
+  <h2>Identify from a photo</h2>
+  <p class="hint">Claude suggests likely species from your photo. Treat it as a second opinion and confirm in the field or with a specialist.</p>
+  <div class="card">
+    <label for="idKind">What is in the photo?
+      <select id="idKind"><option value="plant">Plant (leaves, shoots, flowers)</option><option value="dung">Dung or pellets</option><option value="tracks">Tracks</option><option value="browse_marks">Browsing or feeding marks</option></select></label>
+    <div style="display:grid;gap:6px"><div style="font-weight:600;font-size:.9rem">Photo</div>
+      <div class="photobtns"><label class="btn" for="idPhoto"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Take photo</label><label class="btn ghost" for="idGallery">From gallery</label></div></div>
+    <input id="idPhoto" class="vh" type="file" accept="image/*" capture="environment">
+    <input id="idGallery" class="vh" type="file" accept="image/*">
+    <img id="idPrev" alt="Photo to identify" hidden style="max-height:240px;object-fit:contain;border-radius:8px;border:1px solid var(--line)">
+    <label for="idNote">Anything you noticed? <span class="hint" style="font-weight:400">(size, smell, thorns, habitat)</span>
+      <input id="idNote" placeholder="Pellets 1.5 cm, clustered, under Acacia"></label>
+    <button id="idBtn" class="btn" type="button" disabled>Identify</button>
+    <p id="idUnavailable" class="hint" hidden style="margin:0">Photo identification isn't available in this view. Open the app signed in to claude.ai to use it.</p>
+  </div>
+  <div id="idOut" class="idres" style="margin-top:12px"></div>
+</section>
+
+<!-- DATA -->
+<section id="tab-data" role="tabpanel" hidden>
+  <h2>Records</h2>
+  <details class="morph" id="teamDash" style="margin-bottom:12px"><summary>Team overview</summary><div id="dashBody" class="dash"></div></details>
+  <div class="row" style="justify-content:space-between">
+    <div class="seg" role="group" aria-label="Filter" style="flex:1;min-width:220px">
+      <button data-f="all" type="button" aria-pressed="true">All</button>
+      <button data-f="plant" type="button" aria-pressed="false">Plants</button>
+      <button data-f="sign" type="button" aria-pressed="false">Signs</button>
+    </div>
+    <div class="row"><button id="csvBtn" class="btn ghost small" type="button">Export CSV</button><button id="bkBtn" class="btn ghost small" type="button">Back up all data</button></div>
+  </div>
+  <p id="bkInfo" class="hint" style="margin:8px 0 0"></p>
+  <div id="recList" class="list" style="margin-top:12px"></div>
+</section>
+
+<!-- ANALYSIS -->
+<section id="tab-analysis" role="tabpanel" hidden>
+  <h2>Analysis</h2>
+  <div class="grid2">
+    <label for="aSite">Site<select id="aSite"><option value="">All sites</option></select></label>
+    <label for="aSeason">Season<select id="aSeason"><option value="">All seasons</option><option value="dry">Dry</option><option value="wet">Wet</option><option value="transition">Transition</option><option value="spring">Spring</option><option value="summer">Summer</option><option value="autumn">Autumn</option><option value="winter">Winter</option></select></label>
+  </div>
+  <div id="analysisOut"></div>
+  <h3>Lab results (nutrition)</h3>
+  <div class="card">
+    <p class="hint" style="margin:0">Give each sampled plant a lab sample ID on the Record tab. When results arrive, import them as a CSV with a <b>sample_id</b> column and any of CP, NDF, ADF, ADL, CT, TP, Ash, DM (% of dry matter). The template lists your sample IDs.</p>
+    <div class="photobtns"><button id="nuTpl" class="btn ghost small" type="button">Download template</button><label class="btn small" for="nuFile">Import lab CSV</label></div>
+    <input id="nuFile" class="vh" type="file" accept=".csv,text/csv">
+    <p id="nuMsg" class="hint" style="margin:0" role="status"></p>
+  </div>
+</section>
+
+<!-- PHENOLOGY -->
+<section id="tab-pheno" role="tabpanel" hidden>
+  <h2>Phenology from satellite</h2>
+  <p class="hint">Monthly greenness (Sentinel-2 NDVI) for the study site, without a field visit. Higher NDVI means more green leaves; around 0.2 is dry and leafless.</p>
+  <div class="grid2">
+    <label for="phSite">Site<select id="phSite"><option value="">Loading sites…</option></select></label>
+    <label for="phMonth">Month<select id="phMonth"></select></label>
+  </div>
+  <div id="phOut"></div>
+  <h3>Update satellite data</h3>
+  <div class="card">
+    <p class="hint" style="margin:0">Run the phenology script in Google Earth Engine, export <b>Makuyuni_monthly_NDVI_per_point.csv</b> to Drive, then import it here. It replaces the data for the site selected above.</p>
+    <label for="phFile">Earth Engine CSV
+      <input id="phFile" type="file" accept=".csv,text/csv"></label>
+    <p id="phMsg" class="hint" style="margin:0" role="status"></p>
+  </div>
+</section>
+
+<!-- CAMERA TRAPS -->
+<section id="tab-cams" role="tabpanel" hidden>
+  <h2>Camera traps</h2>
+  <p class="hint">Register each camera, load the photos from its card, and enter the species in each photo. Results show detection rates, daily activity, and links to browsing and phenology.</p>
+  <label for="cSite">Site<select id="cSite"><option value="">Loading sites…</option></select></label>
+
+  <h3>Cameras</h3>
+  <div id="camList" class="list"></div>
+  <button id="camAddBtn" class="btn ghost small" type="button" style="justify-self:start;margin-top:10px">Add a camera</button>
+  <div id="camAddBox" class="card" hidden style="margin-top:10px">
+    <div class="grid2">
+      <label for="cId">Camera ID<input id="cId" placeholder="CT-01" autocomplete="off"></label>
+      <label for="cPlot">Plot ID<input id="cPlot" placeholder="MK-F-01" autocomplete="off"></label>
+      <label for="cLat">Latitude<input id="cLat" inputmode="decimal" placeholder="-3.4628"></label>
+      <label for="cLon">Longitude<input id="cLon" inputmode="decimal" placeholder="36.1084"></label>
+      <button id="cGps" class="btn ghost small" type="button" style="justify-self:start">Use my location</button>
+      <label for="cSet">Set up on<input id="cSet" type="date"></label>
+      <label for="cCol">Collected on <span class="hint" style="font-weight:400">(empty if still running)</span><input id="cCol" type="date"></label>
+    </div>
+    <div class="row"><button id="cSave" class="btn small" type="button">Save camera</button><button id="cCancel" class="btn ghost small" type="button">Cancel</button></div>
+  </div>
+
+  <h3>Load photos</h3>
+  <div class="card">
+    <label for="cCam">Camera<select id="cCam"></select></label>
+    <div class="photobtns"><label class="btn ghost" for="cFiles"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>Choose photos</label></div>
+    <input id="cFiles" class="vh" type="file" accept="image/*" multiple>
+    <p id="cInfo" class="hint" style="margin:0">Choose up to 40 photos at a time from the camera's card. The date and time are read from each photo.</p>
+    <label class="check" for="cKeepPh"><input id="cKeepPh" type="checkbox" checked>Keep the photos with the records</label>
+    <div class="row">
+      <button id="cIdAll" class="btn small" type="button" disabled hidden>Identify with Claude</button>
+      <button id="cSaveAll" class="btn small" type="button" disabled>Save kept photos</button>
+      <button id="cClear" class="btn ghost small" type="button" hidden>Clear</button>
+    </div>
+  </div>
+  <datalist id="camAnimals"></datalist>
+  <div id="cQueue" class="list" style="margin-top:10px"></div>
+
+  <h3>Results</h3>
+  <div id="camOut"></div>
+  <button id="camCsv" class="btn ghost small" type="button" style="justify-self:start;margin-top:14px">Export detections CSV</button>
+</section>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="record" aria-selected="true" type="button"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>Record</button>
+  <button role="tab" data-tab="identify" aria-selected="false" type="button" hidden><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>Identify</button>
+  <button role="tab" data-tab="data" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg>Records</button>
+  <button role="tab" data-tab="analysis" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>Analysis</button>
+  <button role="tab" data-tab="pheno" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 6-14 15-14 0 9-6 14-14 14"/><path d="M5 19l8-8"/></svg>Phenology</button>
+  <button role="tab" data-tab="cams" aria-selected="false" type="button"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Cameras</button>
+</nav>
+<div id="toast" class="toast" hidden role="status"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const ANIMAL_NAME={};
+const PHENO=[["leafless","Leafless"],["new_leaves","New leaves"],["mature_leaves","Mature leaves"],["senescent","Senescent"],["flowering","Flowering"],["fruiting","Fruiting"]];
+const PARTS=[["leaves","Leaves"],["shoots","Shoots / twigs"],["bark","Bark"],["flowers","Flowers"],["fruits","Fruits / pods"],["whole","Whole plant"]];
+const PART_NAME=Object.fromEntries(PARTS);
+const LTRAITS=[["hairy","Hairy"],["waxy","Waxy / glossy"],["leathery","Leathery"],["succulent","Succulent"],["sticky","Sticky / resinous"],["aromatic","Aromatic"],["latex","Milky latex"],["thin","Thin, soft"]];
+const LTRAIT_NAME=Object.fromEntries(LTRAITS);
+const MORPH_NUM=["canopy","stemD","stems","spineL","leafL","leafW","leafA"],MORPH_SEL=["branch","spines","leafType"];
+const SEL_NAME=id=>{const m={};[...$(id).options].forEach(o=>{if(o.value)m[o.value]=o.textContent});return m};
+const HAB_NAME={forest:"Forest / woodland",bushland:"Bushland",grassland:"Grassland",wetland:"Wetland / riverine",edge:"Forest edge / clearing",agricultural:"Agricultural land",other:"Other"};
+
+const S={sites:LS.get("dg_sites",[]),pendingSite:null,db:null,assets:null,sample:null,dl:null,user:null,myId:null,obs:[],loaded:false,outbox:LS.get("dg_outbox",[]),kind:"plant",used:false,recPhoto:null,idPhoto:null,filter:"all",names:{},confirmDel:null};
+
+/* ---------- UI helpers ---------- */
+let toastT;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2800)}
+function chips(el,items){el.innerHTML=items.map(([v,l])=>`<button type="button" class="chip" data-v="${v}" aria-pressed="false">${esc(l)}</button>`).join("");el.onclick=e=>{const b=e.target.closest(".chip");if(b)b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")==="true"?"false":"true")}}
+const chipVals=el=>[...el.querySelectorAll('.chip[aria-pressed="true"]')].map(b=>b.dataset.v);
+const clearChips=el=>el.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed","false"));
+chips($("pheno"),PHENO);chips($("parts"),PARTS);chips($("lTraits"),LTRAITS);
+try{if(LS.get("dg_morphOpen",false))$("morphBox").open=true}catch(e){}
+$("morphBox").addEventListener("toggle",()=>LS.set("dg_morphOpen",$("morphBox").open));
+
+function setTab(t){document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t?"true":"false"));
+  document.querySelectorAll("section[role=tabpanel]").forEach(s=>s.hidden=s.id!=="tab-"+t);LS.set("dg_tab",t);window.scrollTo(0,0);
+  if(t==="analysis")renderAnalysis();if(t==="data")renderList();if(t==="pheno")renderPheno();if(t==="cams")renderCams()}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+
+function setKind(k){S.kind=k;$("kindPlant").setAttribute("aria-pressed",k==="plant");$("kindSign").setAttribute("aria-pressed",k==="sign");$("plantForm").hidden=k!=="plant";$("signForm").hidden=k!=="sign"}
+$("kindPlant").onclick=()=>setKind("plant");$("kindSign").onclick=()=>setKind("sign");
+function setUsed(u){S.used=u;$("usedYes").setAttribute("aria-pressed",u);$("usedNo").setAttribute("aria-pressed",!u);$("usedBox").hidden=!u}
+$("usedYes").onclick=()=>setUsed(true);$("usedNo").onclick=()=>setUsed(false);
+
+const siteOf=id=>S.sites.find(s=>s.id===id);
+const siteName=r=>(siteOf(r.site)||{}).name||r.siteName||r.site;
+const siteLabel=s=>esc(s.name)+(s.country?", "+esc(s.country):"");
+function fillSites(){const sel=$("site");const cur=S.pendingSite||sel.value||LS.get("dg_plot",{}).site;
+  sel.innerHTML=S.sites.length?S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join(""):`<option value="">No sites yet: add one below</option>`;
+  if(cur&&siteOf(cur)){sel.value=cur;if(S.pendingSite===cur){S.pendingSite=null;LS.set("dg_plot",Object.fromEntries(PLOT.map(x=>[x,$(x).value])))}}
+  const a=$("aSite"),ac=a.value;a.innerHTML=`<option value="">All sites</option>`+S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join("");a.value=ac;
+  fillAnimals()}
+function fillAnimals(){const id=$("site").value,s=siteOf(id);
+  const set=new Set([...((s&&s.animals)||[]),...S.obs.filter(r=>r.kind==="sign"&&r.site===id&&r.animal).map(r=>r.animal),"Unknown"]);
+  $("animalList").innerHTML=[...set].map(a=>`<option value="${esc(a)}">`).join("")}
+$("addSiteBtn").onclick=()=>{$("addSiteBox").hidden=false;$("addSiteBtn").hidden=true;$("nsName").focus()};
+$("nsCancel").onclick=()=>{$("addSiteBox").hidden=true;$("addSiteBtn").hidden=false};
+$("nsSave").onclick=async()=>{const name=$("nsName").value.trim(),country=$("nsCountry").value.trim();
+  if(!name||!country){toast("Enter the site name and country");return}
+  if(!S.db){toast("Sign in to add a site");return}
+  const id=(name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"site")+"-"+uid().slice(0,4);
+  const doc={name,country,description:$("nsDesc").value.trim(),animals:$("nsAnimals").value.split(",").map(x=>x.trim()).filter(Boolean),createdAt:new Date().toISOString()};
+  $("nsSave").disabled=true;
+  try{S.pendingSite=id;await S.db.collection("sites").doc(id).set(doc);["nsName","nsCountry","nsDesc","nsAnimals"].forEach(k=>$(k).value="");$("nsCancel").onclick();toast("Site added")}
+  catch(e){S.pendingSite=null;toast("Couldn't save the site. Check your connection and try again")}
+  finally{$("nsSave").disabled=false}};
+
+/* plot fields persist per viewer */
+const PLOT=["site","season","habitat","plot","lat","lon"];
+["skyObs","windObs"].forEach(k=>{const v=LS.get("dg_"+k,"");if(v)$(k).value=v;$(k).addEventListener("change",()=>LS.set("dg_"+k,$(k).value))});
+const savedPlot=LS.get("dg_plot",{});PLOT.forEach(k=>{if(savedPlot[k]!=null)$(k).value=savedPlot[k];$(k).addEventListener("change",()=>{LS.set("dg_plot",Object.fromEntries(PLOT.map(x=>[x,$(x).value])));if(k==="site")fillAnimals()})});
+fillSites();
+
+/* ---------- photos ---------- */
+function compress(file,max=1280,q=.75){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const img=new Image();
+  img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(b=>b?res(b):rej(new Error("compress")),"image/jpeg",q)};
+  img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("Could not read that image"))};img.src=url})}
+const blobToDataURL=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+function dataURLToBlob(d){const[h,b64]=d.split(",");const bin=atob(b64);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:h.match(/:(.*?);/)[1]})}
+/* GPS position stored in the photo by the phone's camera (EXIF GPS), used when the plot has no coordinates yet */
+async function exifGPS(file){try{const buf=new DataView(await file.slice(0,262144).arrayBuffer());if(buf.getUint16(0)!==0xFFD8)return null;let o=2;
+  while(o+10<buf.byteLength){const mk=buf.getUint16(o),len=buf.getUint16(o+2);
+    if(mk===0xFFE1&&buf.getUint32(o+4)===0x45786966){const t=o+10,le=buf.getUint16(t)===0x4949,g16=q=>buf.getUint16(q,le),g32=q=>buf.getUint32(q,le);
+      const find=(off,tag)=>{const n=g16(t+off);for(let i=0;i<n;i++){const e=t+off+2+i*12;if(g16(e)===tag)return e}return null};
+      const gp=find(g32(t+4),0x8825);if(!gp)return null;const go=g32(gp+8);
+      const ref=tag=>{const e=find(go,tag);return e?String.fromCharCode(buf.getUint8(e+8)):""};
+      const dms=tag=>{const e=find(go,tag);if(!e)return null;const q=t+g32(e+8),rv=i=>g32(q+i*8)/(g32(q+i*8+4)||1);return rv(0)+rv(1)/60+rv(2)/3600};
+      let la=dms(2),lo=dms(4);if(la==null||lo==null||(!la&&!lo))return null;if(ref(1)==="S")la=-la;if(ref(3)==="W")lo=-lo;
+      return{lat:+la.toFixed(7),lon:+lo.toFixed(7)}}
+    if((mk&0xFF00)!==0xFF00)break;o+=2+len}}catch(e){}return null}
+const onRecPhoto=async e=>{const f=e.target.files[0];if(!f)return;let msg="Photo added";
+  if(!$("lat").value.trim()&&!$("lon").value.trim()){const g=await exifGPS(f);if(g){$("lat").value=g.lat;$("lon").value=g.lon;$("lat").dispatchEvent(new Event("change"));msg="Photo added. Location filled in from the photo"}}
+  try{S.recPhoto=await compress(f);$("recPhotoPrev").src=URL.createObjectURL(S.recPhoto);$("recPhotoPrev").hidden=false;toast(msg)}catch(err){toast(err.message)}};
+$("recPhoto").onchange=onRecPhoto;$("recGallery").onchange=onRecPhoto;
+$("idPhoto").onchange=$("idGallery").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{S.idPhoto=await compress(f,1024,.8);$("idPrev").src=URL.createObjectURL(S.idPhoto);$("idPrev").hidden=false;$("idBtn").disabled=!S.sample}catch(err){toast(err.message)}};
+
+/* ---------- saving & sync ---------- */
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)).replace(/[^\w-]/g,"");
+const num=v=>v===""||v==null?null:Number(v);
+
+function buildRecord(){const plot=Object.fromEntries(PLOT.map(k=>[k,$(k).value.trim()]));
+  if(!plot.site)throw new Error("Choose or add a study site first");
+  if(!plot.plot)throw new Error("Add a plot ID first");
+  const st=siteOf(plot.site)||{};
+  const r={id:uid(),kind:S.kind,...plot,siteName:st.name||"",country:st.country||"",lat:num(plot.lat),lon:num(plot.lon),notes:$("notes").value.trim(),skyObs:$("skyObs").value||null,windObs:$("windObs").value||null,createdAt:new Date().toISOString()};
+  r.weatherStatus=r.lat!=null&&r.lon!=null?"pending":"none";
+  if(S.kind==="plant"){let sp=normSp($("species").value);if(!sp)throw new Error("Enter the plant species, or 'unknown'");
+    const chk=spCheck(sp);if(chk.exact)sp=chk.exact;
+    else if(chk.similar&&S.spOk!==sp){S.spOk=sp;showSpHint();throw new Error(`“${sp}” looks like “${chk.similar}”, already recorded. Tap the suggestion, or tap Save again to keep your spelling`)}
+    $("species").value=sp;
+    const ai=S.aiSug&&S.aiSug.kind==="plant"?S.aiSug:null;
+    Object.assign(r,{labId:$("labId").value.trim()||null,aiSuggestion:ai?ai.name:null,aiConfidence:ai?ai.conf:null,aiAgreed:ai?normSp(ai.name).toLowerCase()===sp.toLowerCase():null});
+    Object.assign(r,{species:sp,certainty:$("pCert").value,growth:$("growth").value,height:num($("height").value),phenology:chipVals($("pheno")),shootsTotal:num($("shootsTot").value),used:S.used,
+      parts:S.used?chipVals($("parts")):[],shootsBrowsed:S.used?num($("shootsBr").value):null,intensity:S.used?Number($("intens").value):0,
+      canopy:num($("canopy").value),stemDiam:num($("stemD").value),stems:num($("stems").value),branching:$("branch").value||null,spines:$("spines").value||null,
+      spineLength:num($("spineL").value),leafType:$("leafType").value||null,leafLength:num($("leafL").value),leafWidth:num($("leafW").value),leafArea:num($("leafA").value),leafAreaMethod:LT.usedFor&&LT.usedFor===$("leafA").value?"photo":($("leafA").value?"manual":null),leafTraits:chipVals($("lTraits")),
+      browseMin:S.used?num($("brMin").value):null,browseMax:S.used?num($("brMax").value):null,biteDiam:S.used?num($("biteD").value):null});
+    if(r.browseMin!=null&&r.browseMax!=null&&r.browseMin>r.browseMax)throw new Error("The lowest browsed point is above the highest");
+    if(r.height!=null&&r.browseMax!=null&&r.browseMax>r.height)throw new Error("The highest browsed point is above the plant's height");
+    if(r.used&&r.shootsTotal!=null&&r.shootsBrowsed!=null&&r.shootsBrowsed>r.shootsTotal)throw new Error("Browsed shoots can't exceed available shoots");
+    if(r.certainty!=="sure"&&!S.recPhoto)throw new Error("Add a photo when the identification isn't sure");}
+  else{const ai=S.aiSug&&S.aiSug.kind==="sign"?S.aiSug:null,an=$("animal").value.trim()||"Unknown";
+    Object.assign(r,{aiSuggestion:ai?ai.name:null,aiConfidence:ai?ai.conf:null,aiAgreed:ai?ai.name.toLowerCase()===an.toLowerCase():null});
+    Object.assign(r,{signType:$("signType").value,animal:an,certainty:$("sCert").value,count:num($("sCount").value),freshness:$("signType").value==="dung"?$("fresh").value:null});
+    if(r.certainty!=="sure"&&!S.recPhoto)throw new Error("Add a photo when the identification isn't sure");}
+  return r}
+
+async function pushOne(r,photoBlob){if(photoBlob){if(!S.assets)throw new Error("no assets");const up=await S.assets.upload(photoBlob);r.photoId=up.id}
+  if(S.myId)r.observerId=S.myId;await S.db.collection("obs").doc(r.id).set(r)}
+
+$("saveBtn").onclick=async()=>{let r;try{r=buildRecord()}catch(e){toast(e.message);return}
+  const photo=S.recPhoto;$("saveBtn").disabled=true;
+  try{if(!S.db)throw new Error("offline");await pushOne(r,photo);toast(navigator.onLine?"Saved":"Saved on this phone. It will sync when you have signal")}
+  catch(e){const entry={r};if(photo)entry.photo=await blobToDataURL(photo);S.outbox.push(entry);
+    if(!LS.set("dg_outbox",S.outbox)){delete entry.photo;LS.set("dg_outbox",S.outbox);toast("Saved on this phone without the photo (storage full)")}else toast("No connection: saved on this phone, will upload later");updatePill()}
+  finally{$("saveBtn").disabled=false}
+  resetObs()};
+
+function resetObs(){S.aiSug=null;S.spOk=null;$("spHint").hidden=true;["species","height","shootsTot","shootsBr","notes","brMin","brMax","biteD","labId"].forEach(k=>$(k).value="");
+  if(!$("morphKeep").checked){[...MORPH_NUM,...MORPH_SEL].forEach(k=>$(k).value="");clearChips($("lTraits"))}$("sCount").value="1";clearChips($("pheno"));clearChips($("parts"));setUsed(false);
+  $("pCert").value="sure";$("sCert").value="sure";S.recPhoto=null;$("recPhoto").value="";$("recGallery").value="";$("recPhotoPrev").hidden=true}
+
+let syncing=false;
+async function syncOutbox(){if(syncing||!S.db||!S.outbox.length||!navigator.onLine)return;syncing=true;updatePill();
+  const left=[];for(const e of S.outbox){try{await pushOne(e.r,e.photo?dataURLToBlob(e.photo):null)}catch(err){left.push(e)}}
+  const sent=S.outbox.length-left.length;S.outbox=left;LS.set("dg_outbox",left);syncing=false;updatePill();if(sent)toast(`Uploaded ${sent} saved record${sent>1?"s":""}`)}
+window.addEventListener("online",syncOutbox);
+/* (sync status: see the standalone section below) */
+
+/* ---------- weather (Open-Meteo, free, no key) ----------
+   Each record with a GPS point gets the modelled weather for its place and hour.
+   Offline records stay "pending" and are filled in once any team phone is online. */
+const WX_COLS=["skyObs","windObs","wx_temp","wx_rh","wx_rain","wx_cloud","wx_wind","wx_tmax","wx_tmin","wx_dayRain","wx_source"];
+function wxCell(r,c){return c.startsWith("wx_")?(r.weather||{})[c.slice(3)]:r[c]}
+function wxLine(r){const w=r.weather;
+  if(w)return `<div class="m">Weather: ${w.temp!=null?Math.round(w.temp)+" °C":""}${w.rh!=null?" · "+Math.round(w.rh)+"% humidity":""}${w.rain!=null?" · "+w.rain+" mm rain":""}${w.cloud!=null?" · "+Math.round(w.cloud)+"% cloud":""}${w.wind!=null?" · wind "+Math.round(w.wind)+" km/h":""}${r.skyObs?" · seen: "+esc(r.skyObs):""}</div>`;
+  if(r.weatherStatus==="pending"||(r.lat!=null&&r.lon!=null&&r.weatherStatus!=="none"))return `<div class="m">Weather: pending${r.skyObs?" · seen: "+esc(r.skyObs):""}</div>`;
+  return r.skyObs?`<div class="m">Weather seen: ${esc(r.skyObs)}${r.windObs?", "+esc(r.windObs)+" wind":""}</div>`:""}
+const WX={busy:false,tries:{},timer:null};
+function wxTime(c,r){if(c==="obs"){const d=new Date(r.createdAt);return isNaN(d)?null:{t:d.toISOString().slice(0,13),tz:"GMT"}}
+  const s=String(r.takenAt||"");return /^\d{4}-\d\d-\d\dT\d\d/.test(s)?{t:s.slice(0,13),tz:"auto"}:null}
+function wxPos(c,r){if(r.lat!=null&&r.lon!=null)return[r.lat,r.lon];if(c==="camobs"){const cam=S.cams.find(k=>k.id===r.cam);if(cam&&cam.lat!=null&&cam.lon!=null)return[cam.lat,cam.lon]}return null}
+async function wxFetch(lat,lon,t,tz){const day=t.slice(0,10),age=(Date.now()-Date.parse(day+"T00:00:00Z"))/864e5;
+  if(age<-14)throw new Error("too far ahead");
+  const arch=age>80,base=arch?"https://archive-api.open-meteo.com/v1/archive":"https://api.open-meteo.com/v1/forecast";
+  const q=new URLSearchParams({latitude:(+lat).toFixed(4),longitude:(+lon).toFixed(4),start_date:day,end_date:day,
+    hourly:"temperature_2m,relative_humidity_2m,precipitation,cloud_cover,wind_speed_10m",daily:"temperature_2m_max,temperature_2m_min,precipitation_sum",timezone:tz,wind_speed_unit:"kmh"});
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),15000);
+  try{const res=await fetch(base+"?"+q,{signal:ctl.signal});if(!res.ok)throw new Error("weather service "+res.status);
+    const j=await res.json(),H=j.hourly||{},i=(H.time||[]).indexOf(t+":00"),D=j.daily||{};
+    if(i<0||H.temperature_2m[i]==null)throw new Error("not available yet");
+    const r1=v=>v==null?null:Math.round(v*10)/10;
+    return{temp:r1(H.temperature_2m[i]),rh:r1(H.relative_humidity_2m[i]),rain:r1(H.precipitation[i]),cloud:r1(H.cloud_cover[i]),wind:r1(H.wind_speed_10m[i]),
+      tmax:r1((D.temperature_2m_max||[])[0]),tmin:r1((D.temperature_2m_min||[])[0]),dayRain:r1((D.precipitation_sum||[])[0]),
+      hour:t+":00",timezone:j.timezone||tz,source:arch?"Open-Meteo historical (ERA5)":"Open-Meteo weather model",fetchedAt:new Date().toISOString()}}
+  finally{clearTimeout(to)}}
+async function wxFill(){if(WX.busy||!S.db||!navigator.onLine)return;WX.busy=true;let n=0;
+  try{const todo=[];
+    for(const[c,list]of[["obs",S.obs],["camobs",S.camobs]])for(const r of list||[]){
+      if(r.weather||r.weatherStatus==="none"||(WX.tries[r.id]||0)>=3)continue;const pos=wxPos(c,r),tm=wxTime(c,r);if(!pos||!tm)continue;todo.push([c,r,pos,tm])}
+    for(const[c,r,pos,tm]of todo.slice(0,25)){try{const w=await wxFetch(pos[0],pos[1],tm.t,tm.tz);
+        await S.db.collection(c).doc(r.id).update({weather:w,weatherStatus:"done"});r.weather=w;n++}
+      catch(e){WX.tries[r.id]=(WX.tries[r.id]||0)+1;if(!navigator.onLine)break}}
+    if(todo.length>25)wxSoon(20000)}
+  finally{WX.busy=false}
+  if(n&&LS.get("dg_tab","record")==="data")renderList()}
+function wxSoon(ms){clearTimeout(WX.timer);WX.timer=setTimeout(wxFill,ms||4000)}
+window.addEventListener("online",()=>wxSoon(3000));setInterval(()=>wxSoon(1000),300000);
+
+/* ---------- records list ---------- */
+document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;document.querySelectorAll("[data-f]").forEach(x=>x.setAttribute("aria-pressed",x===b));renderList()});
+function recTitle(r){return r.kind==="plant"?esc(r.species):esc(ANIMAL_NAME[r.animal]||r.animal)+" · "+esc(({dung:"dung",tracks:"tracks",browse_marks:"browsing marks",hair:"hair",resting:"resting site"})[r.signType]||r.signType)}
+async function renderList(){const el=$("recList");bkInfo();renderDash();
+  const pending=S.outbox.map(e=>({...e.r,_pending:true}));
+  const rows=[...pending,...S.obs].filter(r=>S.filter==="all"||r.kind===S.filter);
+  if(!rows.length){el.innerHTML=`<div class="empty">${S.db||!S.loaded?"No records yet. Saved observations from you and your field team appear here.":"Not connected. Records you save are kept on this phone until a connection is available."}</div>`;return}
+  const ids=[...new Set(rows.map(r=>r.observerId).filter(Boolean))];
+  if(S.user&&ids.length){try{const ps=await S.user.profiles(ids);ids.forEach(i=>S.names[i]=(ps[i]&&ps[i].name)||"Someone")}catch(e){}}
+  el.innerHTML=rows.slice(0,400).map(r=>{const d=new Date(r.createdAt);
+    const tag=r._pending?'<span class="tag n">waiting</span>':r.kind==="plant"?(r.used?'<span class="tag b">browsed</span>':'<span class="tag n">not used</span>'):'<span class="tag s">sign</span>';
+    const who=r.observerId?esc(S.names[r.observerId]||""):"";
+    const del=!r._pending&&(r.observerId===S.myId||S.canEdit)?`<button class="btn ghost small" type="button" data-del="${esc(r.id)}" style="grid-column:2;justify-self:end">${S.confirmDel===r.id?"Confirm delete":"Delete"}</button>`:"";
+    return `<div class="rec"><div class="t">${recTitle(r)}${tag}</div>
+      <div class="m">${esc(siteName(r))} ·${esc(r.plot)} · ${esc(HAB_NAME[r.habitat]||r.habitat)} · ${esc(r.season)}</div>
+      <div class="m">${isNaN(d)?"":d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}${who?" · "+who:""}</div>
+      ${wxLine(r)}
+      ${r.photoId?`<img data-photo="${esc(r.photoId)}" alt="">`:""}${del}</div>`}).join("");
+  el.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{const id=b.dataset.del;
+    if(S.confirmDel!==id){S.confirmDel=id;renderList();return}
+    S.confirmDel=null;try{await S.db.collection("obs").doc(id).delete();toast("Deleted")}catch(e){toast("Couldn't delete: you can only delete your own records")}});
+  loadPhotos(el)}
+
+/* ---------- team overview (private to the signed-in team) ---------- */
+(()=>{const d=$("teamDash");try{if(LS.get("dg_dash","open")==="open")d.open=true}catch(e){}d.addEventListener("toggle",()=>LS.set("dg_dash",d.open?"open":"closed"))})();
+async function renderDash(){const el=$("dashBody");if(!el)return;
+  const D=864e5,now=Date.now(),obs=S.obs||[],cams=S.camobs||[],all=[...obs,...cams];
+  const ts=r=>Date.parse(r.createdAt||"")||0;
+  const waiting=Object.values(S.pend||{}).reduce((a,b)=>a+b,0)+(S.outbox||[]).length;
+  const wxp=all.filter(r=>!r.weather&&r.weatherStatus==="pending").length;
+  const last7=all.filter(r=>now-ts(r)<7*D).length;
+  const tile=(v,l)=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+  // per site
+  const bySite={};const S0=id=>bySite[id]||(bySite[id]={plants:0,signs:0,cams:0,last:0});
+  obs.forEach(r=>{const s=S0(r.site||"?");r.kind==="plant"?s.plants++:s.signs++;s.last=Math.max(s.last,ts(r))});
+  cams.forEach(r=>{const s=S0(r.site||"?");s.cams++;s.last=Math.max(s.last,ts(r))});
+  // per person
+  const byWho={};all.forEach(r=>{const k=r.observerId||"?";const w=byWho[k]||(byWho[k]={n:0,last:0,wk:0});w.n++;w.wk+=now-ts(r)<7*D?1:0;w.last=Math.max(w.last,ts(r))});
+  const ids=Object.keys(byWho).filter(k=>k!=="?"&&!S.names[k]);
+  if(S.user&&ids.length){try{const ps=await S.user.profiles(ids);ids.forEach(i=>S.names[i]=(ps[i]&&ps[i].name)||"")}catch(e){}}
+  const who=k=>k==="?"?"Not recorded":k===S.myId?(S.names[k]?esc(S.names[k])+" (you)":"You"):esc(S.names[k]||"Team member");
+  const day=v=>v?new Date(v).toLocaleDateString([], {day:"numeric",month:"short",year:"numeric"}):"–";
+  // last 14 days
+  const days=[...Array(14)].map((_,i)=>{const d=new Date(now-(13-i)*D);return d.toISOString().slice(0,10)});
+  const cnt=days.map(k=>all.filter(r=>String(r.createdAt||"").slice(0,10)===k).length),mx=Math.max(1,...cnt);
+  const siteRows=Object.entries(bySite).sort((a,b)=>b[1].last-a[1].last).map(([id,s])=>{const st=siteOf(id);
+    return `<tr><td>${st?siteLabel(st):"Unknown site"}</td><td class="n">${s.plants}</td><td class="n">${s.signs}</td><td class="n">${s.cams}</td><td>${day(s.last)}</td></tr>`}).join("");
+  const whoRows=Object.entries(byWho).sort((a,b)=>b[1].n-a[1].n).map(([k,w])=>`<tr><td>${who(k)}</td><td class="n">${w.n}</td><td class="n">${w.wk}</td><td>${day(w.last)}</td></tr>`).join("");
+  el.innerHTML=`<div class="tiles">${tile(obs.length,"field records")}${tile(cams.length,"camera photos")}${tile(last7,"in the last 7 days")}${tile(waiting,"waiting to sync on this phone")}${tile(wxp,"weather pending")}</div>
+   <div><h3>Last 14 days</h3><div class="bars" role="img" aria-label="Records per day over the last 14 days">${cnt.map((c,i)=>`<div class="bar${c?"":" z"}" style="height:${c?Math.max(6,Math.round(c/mx*100)):2}%" title="${days[i]}: ${c} record${c===1?"":"s"}"></div>`).join("")}</div>
+     <div class="bl">${days.map((k,i)=>`<span>${i%2?"":+k.slice(8)}</span>`).join("")}</div></div>
+   <div><h3>By site</h3>${siteRows?`<div class="tw"><table><thead><tr><th>Site</th><th class="n">Plants</th><th class="n">Signs</th><th class="n">Camera</th><th>Last record</th></tr></thead><tbody>${siteRows}</tbody></table></div>`:`<p class="hint">No records yet.</p>`}</div>
+   <div><h3>By team member</h3>${whoRows?`<div class="tw"><table><thead><tr><th>Name</th><th class="n">Records</th><th class="n">7 days</th><th>Last active</th></tr></thead><tbody>${whoRows}</tbody></table></div>`:`<p class="hint">No records yet.</p>`}</div>
+   <p class="hint" style="margin:0">Only signed-in team members can see this overview. It is not part of the public website.</p>`}
+
+/* ---------- CSV ---------- */
+$("csvBtn").onclick=async()=>{if(!S.obs.length){toast("No records to export yet");return}
+  const cols=["createdAt","kind","site","siteName","country","season","habitat","plot","lat","lon","species","certainty","aiSuggestion","aiConfidence","aiAgreed","labId","growth","height","phenology","shootsTotal","used","parts","shootsBrowsed","intensity","canopy","stemDiam","stems","branching","spines","spineLength","leafType","leafLength","leafWidth","leafArea","leafAreaMethod","leafTraits","browseMin","browseMax","biteDiam","signType","animal","count","freshness","notes","photoId",...WX_COLS];
+  const cell=v=>{if(Array.isArray(v))v=v.join("; ");if(v==null)return"";const s=String(v);return/[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const csv=[cols.join(","),...S.obs.map(r=>cols.map(c=>cell(wxCell(r,c))).join(","))].join("\n");
+  if(!S.dl){toast("Export isn't available in this view");return}
+  try{await S.dl.save({filename:`davigherbivores_${new Date().toISOString().slice(0,10)}.csv`,data:csv});}catch(e){if(e&&e.code!=="declined")toast("Export failed: "+(e.message||e.code))}};
+
+/* ---------- analysis ---------- */
+$("aSite").onchange=renderAnalysis;$("aSeason").onchange=renderAnalysis;
+const pct=x=>isFinite(x)?Math.round(x*100)+"%":"–";
+function bars(items,max,fmt){return `<div class="bars">${items.map(([l,v,t])=>`<div class="bar"><span class="lab">${esc(l)}</span><span class="track"><span class="fill" style="width:${max?Math.max(0,v/max*100):0}%"></span></span><span class="val">${t??fmt(v)}</span></div>`).join("")}</div>`}
+function renderAnalysis(){const out=$("analysisOut");const site=$("aSite").value,sea=$("aSeason").value;
+  const recs=S.obs.filter(r=>(!site||r.site===site)&&(!sea||r.season===sea));
+  const plants=recs.filter(r=>r.kind==="plant"),signs=recs.filter(r=>r.kind==="sign");
+  if(!plants.length&&!signs.length){out.innerHTML=`<div class="empty" style="margin-top:14px">Analysis appears once plant records are saved for this selection: browsing rate per species, preference (Jacobs' index), parts eaten, and habitat comparison.</div>`;return}
+  const N=plants.length,used=plants.filter(p=>p.used),B=used.length;
+  const plots=new Set(recs.map(r=>r.site+"|"+r.plot)).size;
+  const sp={};plants.forEach(p=>{const k=p.species.trim();const o=sp[k]||(sp[k]={n:0,b:0,st:0,sb:0,int:0});o.n++;if(p.used){o.b++;o.int+=p.intensity||0}if(p.shootsTotal!=null){o.st+=p.shootsTotal;o.sb+=p.used?(p.shootsBrowsed||0):0}});
+  const rows=Object.entries(sp).map(([k,o])=>{const pAv=o.n/N,r=B?o.b/B:0;const den=r+pAv-2*r*pAv;return{k,...o,pAv,r,D:B&&den?(r-pAv)/den:null}}).sort((a,b)=>(b.D??-2)-(a.D??-2)||b.n-a.n);
+  let h=`<div class="stats" style="margin-top:14px">
+    <div class="stat"><b>${plots}</b><span>plots</span></div><div class="stat"><b>${N}</b><span>plants recorded</span></div>
+    <div class="stat"><b>${pct(B/N)}</b><span>plants browsed</span></div><div class="stat"><b>${rows.length}</b><span>plant species</span></div></div>`;
+  if(N){
+    h+=`<h3>Species use and preference</h3><p class="hint">Jacobs' index D compares a species' share of browsed plants with its share of available plants: +1 strongly preferred, 0 eaten in proportion to availability, −1 avoided.</p>`;
+    const neu=neuTest(rows,B);
+    if(neu)h+=`<p class="hint"><b>Is browsing selective?</b> Chi-square test of use against availability (Neu's method): χ² = ${neu.chi.toFixed(1)}, df = ${neu.df}, ${fmtP(neu.p)}. ${neu.p<.05?"Browsing is not in proportion to availability.":"No evidence that browsing differs from availability."} The Selection column uses Bonferroni 95% intervals.${neu.lowE>neu.k*.2?` Note: ${neu.lowE} species have fewer than 5 expected browsed plants, so treat their results with caution or pool rare species.`:""}</p>`;
+    if(B){h+=`<div class="bars div">${rows.filter(x=>x.D!=null).slice(0,20).map(x=>`<div class="bar"><span class="lab"><i>${esc(x.k)}</i></span><span class="track"><span class="fill ${x.D>=0?"pos":"neg"}" style="left:${x.D>=0?50:50+x.D*50}%;width:${Math.abs(x.D)*50}%"></span></span><span class="val">${x.D.toFixed(2)}</span></div>`).join("")}</div>
+      <div class="legend"><span>avoided −1</span><span>0</span><span>+1 preferred</span></div>`}
+    h+=`<div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Species</th><th>Plants</th><th>Browsed</th><th>Shoots eaten</th><th>Mean intensity</th><th>Jacobs D</th><th>Selection</th></tr></thead><tbody>
+      ${rows.map(x=>`<tr><td><i>${esc(x.k)}</i></td><td class="num">${x.n}</td><td class="num">${pct(x.b/x.n)}</td><td class="num">${x.st?pct(x.sb/x.st):"–"}</td><td class="num">${x.b?(x.int/x.b).toFixed(1):"–"}</td><td class="num">${x.D==null?"–":x.D.toFixed(2)}</td><td>${x.neu?`<span class="sel ${x.neu}">${({pref:"Preferred",avoid:"Avoided",prop:"As available"})[x.neu]}</span>`:"–"}</td></tr>`).join("")}</tbody></table></div>`;
+    if(B){const pc={};used.forEach(p=>(p.parts||[]).forEach(k=>pc[k]=(pc[k]||0)+1));const pe=Object.entries(pc).sort((a,b)=>b[1]-a[1]);
+      if(pe.length)h+=`<h3>Plant parts eaten</h3><p class="hint">Share of browsed plants where each part was eaten.</p>`+bars(pe.map(([k,v])=>[PART_NAME[k]||k,v/B]),1,pct)}
+    const hb={};plants.forEach(p=>{const o=hb[p.habitat]||(hb[p.habitat]={n:0,b:0});o.n++;if(p.used)o.b++});
+    h+=`<h3>Browsing by habitat</h3>`+bars(Object.entries(hb).map(([k,o])=>[HAB_NAME[k]||k,o.b/o.n,`${pct(o.b/o.n)}`]),1,pct);
+    const ph={};plants.forEach(p=>(p.phenology||[]).forEach(k=>{const o=ph[k]||(ph[k]={n:0,b:0});o.n++;if(p.used)o.b++}));
+    const phe=PHENO.filter(([k])=>ph[k]);if(phe.length)h+=`<h3>Browsing by phenological stage</h3>`+bars(phe.map(([k,l])=>[l,ph[k].b/ph[k].n]),1,pct);
+    h+=morphAnalysis(plants)+nutritionAnalysis(plants,rows)}
+  h+=aiAgreement(recs);
+  if(signs.length){const an={};signs.forEach(s=>{const k=ANIMAL_NAME[s.animal]||s.animal;an[k]=(an[k]||0)+(s.count||1)});const ae=Object.entries(an).sort((a,b)=>b[1]-a[1]);
+    const mx=ae[0][1];h+=`<h3>Animal signs</h3><p class="hint">Total count of signs per animal across ${new Set(signs.map(s=>s.site+"|"+s.plot)).size} plots.</p>`+bars(ae,mx,v=>v)}
+  out.innerHTML=h}
+
+/* morphology: browsing rate by trait class, and browse height / bite size per species */
+function morphAnalysis(plants){let h="";const rate=(groups,names,order)=>{const ks=(order||Object.keys(groups)).filter(k=>groups[k]&&groups[k].n);
+    return ks.length?bars(ks.map(k=>[`${names[k]||k} (${groups[k].n})`,groups[k].b/groups[k].n]),1,pct):""};
+  const by=(f)=>{const g={};plants.forEach(p=>{const ks=[].concat(f(p)??[]).filter(x=>x!=null&&x!=="");ks.forEach(k=>{const o=g[k]||(g[k]={n:0,b:0});o.n++;if(p.used)o.b++})});return g};
+  const HC=[["0–50 cm",0,50],["51–100 cm",50,100],["101–200 cm",100,200],["201–400 cm",200,400],["Over 400 cm",400,1e9]];
+  const gh=by(p=>p.height==null?null:(HC.find(([,a,b])=>p.height>a-(a?0:1)&&p.height<=b)||[])[0]);
+  const gs=by(p=>p.spines),gl=by(p=>p.leafType),gb=by(p=>p.branching),gt=by(p=>p.leafTraits||[]);
+  const any=[gs,gl,gb,gt].some(g=>Object.keys(g).length)||plants.some(p=>p.canopy!=null||p.browseMax!=null||p.biteDiam!=null);
+  if(Object.keys(gh).length)h+=`<h3>Browsing by plant height</h3><p class="hint">Share of plants browsed in each height class (number of plants in brackets).</p>`+rate(gh,{},HC.map(x=>x[0]));
+  if(!any)return h+`<p class="hint" style="margin-top:12px">Fill in the optional plant morphology section when recording plants to compare browsing by spinescence, leaf type, branching and surface traits.</p>`;
+  if(Object.keys(gs).length)h+=`<h3>Browsing by spinescence</h3>`+rate(gs,SEL_NAME("spines"));
+  if(Object.keys(gl).length)h+=`<h3>Browsing by leaf type</h3>`+rate(gl,SEL_NAME("leafType"));
+  if(Object.keys(gb).length)h+=`<h3>Browsing by branching</h3>`+rate(gb,SEL_NAME("branch"));
+  if(Object.keys(gt).length)h+=`<h3>Browsing by leaf and stem surface</h3><p class="hint">A plant can have several surface traits, so groups overlap.</p>`+rate(gt,LTRAIT_NAME);
+  const sp={};plants.forEach(p=>{const k=p.species.trim(),o=sp[k]||(sp[k]={n:0,can:[],sd:[],spl:[],la:[],lo:[],hi:[],bite:[]});o.n++;
+    if(p.canopy!=null)o.can.push(p.canopy);if(p.leafArea!=null)o.la.push(p.leafArea);if(p.stemDiam!=null)o.sd.push(p.stemDiam);if(p.spineLength!=null)o.spl.push(p.spineLength);
+    if(p.used){if(p.browseMin!=null)o.lo.push(p.browseMin);if(p.browseMax!=null)o.hi.push(p.browseMax);if(p.biteDiam!=null)o.bite.push(p.biteDiam)}});
+  const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null,f=(a,d)=>{const m=mean(a);return m==null?"–":m.toFixed(d)};
+  const rows=Object.entries(sp).filter(([,o])=>o.can.length||o.sd.length||o.spl.length||o.la.length||o.lo.length||o.hi.length||o.bite.length).sort((a,b)=>b[1].n-a[1].n);
+  if(rows.length)h+=`<h3>Morphology and browse height by species</h3><p class="hint">Means across recorded plants. Browse height and bite diameter come from browsed plants only.</p>
+    <div class="tablewrap"><table><thead><tr><th>Species</th><th>Canopy cm</th><th>Stem cm</th><th>Spine mm</th><th>Leaf cm²</th><th>Browsed from cm</th><th>to cm</th><th>Bite mm</th></tr></thead><tbody>
+    ${rows.map(([k,o])=>`<tr><td><i>${esc(k)}</i></td><td class="num">${f(o.can,0)}</td><td class="num">${f(o.sd,1)}</td><td class="num">${f(o.spl,0)}</td><td class="num">${f(o.la,2)}</td><td class="num">${f(o.lo,0)}</td><td class="num">${f(o.hi,0)}</td><td class="num">${f(o.bite,1)}</td></tr>`).join("")}</tbody></table></div>`;
+  return h}
+
+/* ---------- identify ---------- */
+$("idBtn").onclick=async()=>{if(!S.sample||!S.idPhoto)return;const kind=$("idKind").value;const st=siteOf($("site").value);
+  const place=(st?`${st.name}, ${st.country}${st.description?" ("+st.description+")":""}`:"a field site (location not given)")+(st&&st.animals&&st.animals.length?`. Herbivores known at this site: ${st.animals.join(", ")}`:"");
+  const what={plant:"a plant (identify the plant species)",dung:"herbivore dung or pellets (identify which animal produced it)",tracks:"animal tracks (identify which animal made them)",browse_marks:"feeding or browsing damage on vegetation (identify which animal most likely fed here)"}[kind];
+  const prompt=`You are assisting a wildlife ecologist doing fieldwork on ungulate browsing at ${place}, in the ${$("season").value} season, habitat: ${HAB_NAME[$("habitat").value]}.
+The attached photo shows ${what}. Field notes from the observer: ${$("idNote").value.trim()||"none"}.
+Suggest up to 3 candidate identifications, most likely first, restricted to species plausible at this site. Be honest about uncertainty; if the photo is not enough, say so with low confidence.
+Return JSON only, in this shape:
+{"candidates":[{"name":"${kind==="plant"?"Scientific name (common name)":"Common name (Scientific name)"}","confidence":"high|medium|low","features":"visible features supporting this, one sentence"}],"check":"what to check in the field to confirm, one or two sentences"}`;
+  const out=$("idOut");out.innerHTML=`<div class="empty">Looking at the photo…</div>`;$("idBtn").disabled=true;
+  try{const res=await S.sample.json(prompt,{images:[S.idPhoto],modelTier:"default"});
+    const c=Array.isArray(res&&res.candidates)?res.candidates:[];
+    out.innerHTML=(c.length?c.map((x,i)=>`<div class="cand"><div class="row" style="justify-content:space-between"><span class="n">${esc(x.name)}</span><span class="conf ${esc(x.confidence)}">${esc(x.confidence)}</span></div><div class="hint" style="margin:0">${esc(x.features)}</div>
+      <button class="btn ghost small" type="button" data-use="${i}" style="justify-self:start">Use in record</button></div>`).join(""):`<div class="empty">No confident suggestion from this photo.</div>`)+
+      (res&&res.check?`<p class="hint" style="margin-top:4px"><b>To confirm:</b> ${esc(res.check)}</p>`:"");
+    out.querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>useCandidate(c[+b.dataset.use].name,kind,c[+b.dataset.use].confidence))}
+  catch(e){out.innerHTML=`<div class="empty">${e&&e.code==="not_granted"?"Identification needs your permission to send the photo to Claude. Tap Identify again and allow it.":e&&e.code==="rate_limited"?"Too many requests just now. Wait a minute and try again.":"Identification didn't work this time. Check your connection and try again."}</div>`}
+  finally{$("idBtn").disabled=false}};
+function useCandidate(name,kind,conf){S.aiSug={name:String(name).split("(")[0].trim(),conf:conf||null,kind:kind==="plant"?"plant":"sign"};
+  if(kind==="plant"){setKind("plant");$("species").value=normSp(String(name).split("(")[0]);$("pCert").value="probable";showSpHint()}
+  else{setKind("sign");$("signType").value=kind;$("animal").value=String(name).split("(")[0].trim();$("sCert").value="probable"}
+  if(S.idPhoto){S.recPhoto=S.idPhoto;$("recPhotoPrev").src=URL.createObjectURL(S.recPhoto);$("recPhotoPrev").hidden=false}
+  setTab("record");toast("Filled in. Check and save the record")}
+
+/* ---------- phenology (satellite NDVI) ---------- */
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const mLabel=k=>{const[y,m]=String(k).split("-");return(MON[+m-1]||m)+" "+y};
+const STAGE={greenup:["Green-up","var(--good)"],peak:["Peak green","var(--acacia)"],senescence:["Senescence","var(--ochre)"],dormant:["Dry / dormant","var(--muted)"]};
+S.pheno=LS.get("dg_pheno",{});S.phSel=null;
+const fin=v=>v!=null&&v!==""&&Number.isFinite(Number(v));
+/* Stage of each month from its place in the local seasonal range (6 months either side) and the direction of change */
+/* a full 13-month window around month i, shifted inward at the ends of the series so it always spans a whole year */
+const win=(n,i)=>{const s=Math.max(0,Math.min(i-6,n-13));return[s,Math.min(n-1,s+12)]};
+function stages(V){return V.map((v,i)=>{if(v==null)return null;let lo=Infinity,hi=-Infinity;const[a,z]=win(V.length,i);
+  for(let j=a;j<=z;j++){const w=V[j];if(w!=null){lo=Math.min(lo,w);hi=Math.max(hi,w)}}
+  const rel=hi-lo>.05?(v-lo)/(hi-lo):.5;let p=null,n=null;
+  for(let j=i-1;j>=0&&p==null;j--)p=V[j];for(let j=i+1;j<V.length&&n==null;j++)n=V[j];
+  const tr=(n??v)-(p??v);if(rel>=.75)return"peak";if(rel<=.12)return"dormant";return tr>0?"greenup":"senescence"})}
+function seasonPeak(V,i){let hi=null;const[a,z]=win(V.length,i);for(let j=a;j<=z;j++)if(V[j]!=null&&(hi==null||V[j]>hi))hi=V[j];return hi}
+function parseCSV(t){const rows=[];let row=[],cur="",q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"')q=true;else if(c===","){row.push(cur);cur=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;row.push(cur);rows.push(row);row=[];cur=""}else cur+=c}
+  if(cur||row.length){row.push(cur);rows.push(row)}return rows.filter(r=>r.length>1||r[0])}
+function fromEE(text){const rows=parseCSV(text);if(rows.length<2)throw new Error("The file has no data rows");
+  const h=rows[0].map(s=>s.trim());
+  const mc=h.map((c,i)=>{const m=c.match(/^NDVI_(\d{4})_(\d{2})$/);return m?{i,k:m[1]+"-"+m[2]}:null}).filter(Boolean).sort((a,b)=>a.k<b.k?-1:1);
+  if(!mc.length)throw new Error("No monthly NDVI columns found. Import Makuyuni_monthly_NDVI_per_point.csv from Earth Engine.");
+  const iId=h.indexOf("point_id"),iLat=h.indexOf("lat"),iLon=h.indexOf("lon");
+  if(iLat<0||iLon<0)throw new Error("The file needs lat and lon columns. Use the CSV exported by the phenology script.");
+  const pts=rows.slice(1).map((r,n)=>{const lat=Number(r[iLat]),lon=Number(r[iLon]);if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
+    return{id:iId>=0?String(r[iId]).replace(/\.0$/,""):String(n+1),lat:+lat.toFixed(7),lon:+lon.toFixed(7),v:mc.map(c=>{const v=parseFloat(r[c.i]);return Number.isFinite(v)?Math.round(v*1000):""}).join(",")}}).filter(Boolean);
+  if(!pts.length)throw new Error("No rows with coordinates in the file");
+  const mean=mc.map((c,j)=>{let s=0,k=0;pts.forEach(p=>{const x=p.v.split(",")[j];if(x!==""){s+=Number(x);k++}});return k?Math.round(s/k)/1000:null});
+  return{months:mc.map(c=>c.k),mean,points:pts}}
+
+function phChart(M,V,P,st,fm,si){const W=640,H=232,l=34,r=12,t=12,b=26,iw=W-l-r,ih=H-t-b,n=M.length;
+  const x=i=>l+(n>1?i/(n-1):.5)*iw,y=v=>t+(1-Math.max(0,Math.min(1,v)))*ih,bw=iw/Math.max(1,n-1);
+  let g="";
+  M.forEach((k,i)=>{if(fm[k]){const x0=Math.max(l,x(i)-bw/2),x1=Math.min(W-r,x(i)+bw/2);g+=`<rect x="${x0}" y="${t}" width="${x1-x0}" height="${ih}" style="fill:var(--ochre-soft)"/>`}});
+  [0,.2,.4,.6,.8,1].forEach(v=>{g+=`<line x1="${l}" x2="${W-r}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(--line)" stroke-width="1"/><text x="${l-6}" y="${y(v)+4}" text-anchor="end" font-size="11" style="fill:var(--muted)">${v.toFixed(1)}</text>`});
+  M.forEach((k,i)=>{if(k.endsWith("-01")||i===0){g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${t+ih}" y2="${t+ih+4}" style="stroke:var(--muted)"/><text x="${x(i)}" y="${H-8}" text-anchor="${i===0?"start":"middle"}" font-size="11" style="fill:var(--muted)">${i===0&&!k.endsWith("-01")?mLabel(k):k.slice(0,4)}</text>`}});
+  if(si>=0)g+=`<line x1="${x(si)}" x2="${x(si)}" y1="${t}" y2="${t+ih}" style="stroke:var(--fg)" stroke-opacity=".5" stroke-dasharray="3 3"/>`;
+  const path=A=>{let s="",on=false;A.forEach((v,i)=>{if(v==null){on=false;return}s+=(on?"L":"M")+x(i).toFixed(1)+","+y(v).toFixed(1);on=true});return s};
+  if(P)g+=`<path d="${path(P)}" style="fill:none;stroke:var(--ochre)" stroke-width="2" stroke-dasharray="5 3"/>`;
+  g+=`<path d="${path(V)}" style="fill:none;stroke:var(--acacia)" stroke-width="2.25" stroke-linejoin="round"/>`;
+  V.forEach((v,i)=>{if(v!=null)g+=`<circle cx="${x(i)}" cy="${y(v)}" r="${i===si?5.5:3.2}" style="fill:${STAGE[st[i]][1]};stroke:var(--surface)" stroke-width="1.5"/>`});
+  M.forEach((k,i)=>{const x0=Math.max(l,x(i)-bw/2),x1=Math.min(W-r,x(i)+bw/2);g+=`<rect data-m="${k}" x="${x0}" y="${t}" width="${x1-x0}" height="${ih}" style="fill:transparent;cursor:pointer"><title>${mLabel(k)}${V[i]!=null?": NDVI "+V[i].toFixed(2):": no clear image"}</title></rect>`});
+  return`<div class="chartwrap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly NDVI for the site">${g}</svg></div>`}
+
+const stageTag=s=>s?`<span class="stg" style="color:${STAGE[s][1]}">${STAGE[s][0]}</span>`:`<span class="stg" style="color:var(--muted)">No clear image</span>`;
+$("phSite").onchange=()=>{S.phSel=null;renderPheno()};
+$("phMonth").onchange=()=>{S.phSel=$("phMonth").value;renderPheno()};
+function renderPheno(){const sel=$("phSite"),cur=sel.value||$("site").value;
+  sel.innerHTML=S.sites.length?S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join(""):`<option value="">No sites yet: add one on the Record tab</option>`;
+  if(cur&&siteOf(cur))sel.value=cur;
+  const site=sel.value,out=$("phOut"),d=S.pheno[site];
+  $("phFile").disabled=!S.db||!site;
+  if(!d||!Array.isArray(d.months)||!d.months.length){$("phMonth").innerHTML="";$("phMonth").disabled=true;
+    out.innerHTML=`<div class="empty" style="margin-top:12px">No satellite data for this site yet. Import the monthly NDVI CSV from Earth Engine below. The greenness curve, the stage of each month and the conditions during your fieldwork then appear here.</div>`;return}
+  const M=d.months,V=d.mean.map(v=>fin(v)?Number(v):null),st=stages(V);
+  const pts=(d.points||[]).map(p=>({id:p.id,lat:Number(p.lat),lon:Number(p.lon),vals:String(p.v||"").split(",").map(x=>x===""?null:Number(x)/1000)}));
+  const fm={};S.obs.filter(r=>r.site===site&&r.createdAt).forEach(r=>{const k=String(r.createdAt).slice(0,7);fm[k]=(fm[k]||0)+1});
+  let lastI=-1;for(let i=V.length-1;i>=0;i--)if(V[i]!=null){lastI=i;break}
+  if(!S.phSel||!M.includes(S.phSel)){const fk=Object.keys(fm).filter(k=>M.includes(k)).sort().pop();S.phSel=fk||M[Math.max(0,lastI)]}
+  const si=M.indexOf(S.phSel);
+  $("phMonth").disabled=false;$("phMonth").innerHTML=M.map(k=>`<option value="${k}">${mLabel(k)}${fm[k]?" · fieldwork":""}</option>`).join("");$("phMonth").value=S.phSel;
+  /* nearest satellite point to the plot coordinates on the Record tab */
+  const lat=fin($("lat").value)?Number($("lat").value):null,lon=fin($("lon").value)?Number($("lon").value):null;let near=null;
+  if(pts.length&&lat!=null&&lon!=null){let best=Infinity;pts.forEach(p=>{const dd=Math.hypot((p.lon-lon)*111320*Math.cos(lat*Math.PI/180),(p.lat-lat)*110540);if(dd<best){best=dd;near=p}});if(best>150)near=null;else near.dist=best}
+  const v=V[si],pk=seasonPeak(V,si),fkeys=Object.keys(fm).filter(k=>M.includes(k)).sort();
+  let h=`<div class="stats" style="margin-top:14px">
+    <div class="stat"><b>${v==null?"–":v.toFixed(2)}</b><span>NDVI, ${mLabel(S.phSel)}</span>${stageTag(st[si])}</div>
+    <div class="stat"><b>${v!=null&&pk?Math.round(v/pk*100)+"%":"–"}</b><span>of the season's peak (${pk==null?"–":pk.toFixed(2)})</span></div>
+    <div class="stat"><b>${lastI<0?"–":V[lastI].toFixed(2)}</b><span>latest, ${lastI<0?"–":mLabel(M[lastI])}</span>${lastI<0?"":stageTag(st[lastI])}</div>
+    <div class="stat"><b>${fkeys.length}</b><span>fieldwork month${fkeys.length===1?"":"s"} in range</span></div></div>`;
+  h+=phChart(M,V,near?near.vals:null,st,fm,si);
+  h+=`<div class="phlegend"><span><i class="ln"></i>Site mean</span>${near?`<span><i class="ds"></i>Your plot</span>`:""}${fkeys.length?`<span><i class="bd"></i>Fieldwork months</span>`:""}${Object.entries(STAGE).map(([,s])=>`<span><i style="background:${s[1]}"></i>${s[0]}</span>`).join("")}</div>
+    <p class="hint" style="margin-top:6px">Tap a month on the chart to select it. Gaps are months when clouds hid the site in every image.</p>`;
+  /* same month in other years */
+  const mm=S.phSel.slice(5),same=M.map((k,i)=>[k,V[i]]).filter(([k,x])=>k.slice(5)===mm&&x!=null);
+  if(same.length>1){h+=`<h3>${MON[+mm-1]} in each year</h3><p class="hint">How green the site was in the same month of other years.</p>`+bars(same.map(([k,x])=>[k.slice(0,4)+(k===S.phSel?" (selected)":"")+(fm[k]?" · fieldwork":""),x,x.toFixed(2)]),1,x=>x.toFixed(2))}
+  /* your plot */
+  h+=`<h3>Your plot</h3>`;
+  if(near){const pv=near.vals[si];h+=`<div class="card"><div class="row" style="justify-content:space-between"><b>Satellite point ${esc(near.id)}</b><span class="hint" style="margin:0">${Math.round(near.dist)} m from the plot coordinates</span></div>
+      <div class="hint" style="margin:0">${mLabel(S.phSel)}: plot NDVI <b>${pv==null?"no clear image":pv.toFixed(2)}</b>${pv!=null&&v!=null?`, ${pv>=v?"greener":"drier"} than the site mean by ${Math.abs(pv-v).toFixed(2)}`:""}.</div></div>`}
+  else if(!pts.length)h+=`<p class="hint">Per-plot curves appear once the Earth Engine CSV with all sampling points is imported.</p>`;
+  else if(lat==null||lon==null)h+=`<p class="hint">Enter the plot's latitude and longitude on the Record tab to compare it with the site mean.</p>`;
+  else h+=`<p class="hint">No satellite point lies within 150 m of the plot coordinates on the Record tab.</p>`;
+  /* browsing by satellite stage */
+  const plants=S.obs.filter(r=>r.kind==="plant"&&r.site===site&&r.createdAt&&M.includes(String(r.createdAt).slice(0,7)));
+  if(plants.length){const g={};plants.forEach(p=>{const s=st[M.indexOf(String(p.createdAt).slice(0,7))]||"none";const o=g[s]||(g[s]={n:0,b:0});o.n++;if(p.used)o.b++});
+    h+=`<h3>Browsing by satellite stage</h3><p class="hint">Share of recorded plants that were browsed, grouped by the site's satellite stage in the month they were recorded.</p>`+
+      bars(Object.entries(g).map(([s,o])=>[(STAGE[s]||["No clear image"])[0]+` (${o.n} plants)`,o.b/o.n]),1,pct)}
+  h+=`<p class="hint" style="margin-top:14px">Source: ${esc(d.source||"Sentinel-2 NDVI")}${pts.length?` · ${pts.length} points`:""}${d.updatedAt?` · updated ${new Date(d.updatedAt).toLocaleDateString()}`:""}</p>`;
+  out.innerHTML=h;
+  out.querySelectorAll("[data-m]").forEach(el=>el.addEventListener("click",()=>{S.phSel=el.dataset.m;renderPheno()}))}
+
+$("phFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const site=$("phSite").value,msg=$("phMsg");
+  if(!S.db||!site){toast("Connect to the internet and choose a site first");return}
+  try{msg.textContent="Reading the file…";const d=fromEE(await f.text());msg.textContent="Saving…";
+    await S.db.collection("pheno").doc(site).set({months:d.months,mean:d.mean,points:d.points,source:"Sentinel-2 NDVI, Earth Engine export ("+f.name+")",updatedAt:new Date().toISOString()});
+    S.phSel=null;msg.textContent=`Imported ${d.points.length} points and ${d.months.length} months.`;toast("Satellite data imported")}
+  catch(err){msg.textContent=err&&err.code==="not_granted"?"You don't have permission to change this site's data.":(err&&err.message)||"Couldn't import that file. Check it is the CSV from Earth Engine."}};
+
+/* ---------- camera traps ---------- */
+S.cams=LS.get("dg_cams",[]);S.camobs=[];S.q=[];S.camBusy=false;S.camDel=null;S.actSp="";
+const pad2=n=>String(n).padStart(2,"0");
+const localISO=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+const fmtDT=s=>{const m=String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}, ${m[4]}:${m[5]}`:"time unknown"};
+const fmtD=s=>{const m=String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:""};
+/* Read the time the camera took the photo (EXIF DateTimeOriginal) from the JPEG header */
+async function exifDate(file){try{const buf=new DataView(await file.slice(0,262144).arrayBuffer());if(buf.getUint16(0)!==0xFFD8)return null;let o=2;
+  while(o+10<buf.byteLength){const mk=buf.getUint16(o),len=buf.getUint16(o+2);
+    if(mk===0xFFE1&&buf.getUint32(o+4)===0x45786966){const t=o+10,le=buf.getUint16(t)===0x4949;const g16=p=>buf.getUint16(p,le),g32=p=>buf.getUint32(p,le);
+      const find=(off,tag)=>{const n=g16(t+off);for(let i=0;i<n;i++){const e=t+off+2+i*12;if(g16(e)===tag)return e}return null};
+      const str=e=>{const cnt=g32(e+4),p=cnt>4?t+g32(e+8):e+8;let s="";for(let i=0;i<cnt-1;i++)s+=String.fromCharCode(buf.getUint8(p+i));return s};
+      const ifd0=g32(t+4);let d=null;const ex=find(ifd0,0x8769);
+      if(ex){const exOff=g32(ex+8);const e2=find(exOff,0x9003)||find(exOff,0x9004);if(e2)d=str(e2)}
+      if(!d){const e3=find(ifd0,0x0132);if(e3)d=str(e3)}
+      const mm=d&&d.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);return mm?`${mm[1]}-${mm[2]}-${mm[3]}T${mm[4]}:${mm[5]}:${mm[6]}`:null}
+    if((mk&0xFF00)!==0xFF00)break;o+=2+len}}catch(e){}return null}
+function trapNightsByMonth(c){const out={};if(!c.setup)return out;const a=new Date(c.setup+"T12:00:00"),b=c.collected?new Date(c.collected+"T12:00:00"):new Date();
+  for(let d=new Date(a),i=0;d<b&&i<2000;d.setDate(d.getDate()+1),i++){const k=localISO(d).slice(0,7);out[k]=(out[k]||0)+1}return out}
+const sumV=o=>Object.values(o).reduce((a,b)=>a+b,0);
+const siteCams=site=>S.cams.filter(c=>c.site===site).sort((a,b)=>String(a.camId).localeCompare(String(b.camId),undefined,{numeric:true}));
+
+function fillCamSites(){const sel=$("cSite"),cur=sel.value||$("site").value;
+  sel.innerHTML=S.sites.length?S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join(""):`<option value="">No sites yet: add one on the Record tab</option>`;
+  if(cur&&siteOf(cur))sel.value=cur}
+$("cSite").onchange=()=>{S.actSp="";renderCams()};
+$("camAddBtn").onclick=()=>{$("camAddBox").hidden=false;$("camAddBtn").hidden=true;if(!$("cLat").value)$("cLat").value=$("lat").value;if(!$("cLon").value)$("cLon").value=$("lon").value;if(!$("cPlot").value)$("cPlot").value=$("plot").value;$("cId").focus()};
+$("cCancel").onclick=()=>{$("camAddBox").hidden=true;$("camAddBtn").hidden=false};
+$("cSave").onclick=async()=>{const site=$("cSite").value,camId=$("cId").value.trim(),setup=$("cSet").value,collected=$("cCol").value;
+  if(!site){toast("Choose a site first");return}if(!camId){toast("Enter the camera ID");return}if(!setup){toast("Enter the date the camera was set up");return}
+  if(collected&&collected<setup){toast("The collection date is before the set-up date");return}
+  if(!S.db){toast("Sign in to add a camera");return}
+  const doc={site,camId,plot:$("cPlot").value.trim(),lat:num($("cLat").value),lon:num($("cLon").value),setup,collected:collected||null,createdAt:new Date().toISOString()};if(S.myId)doc.observerId=S.myId;
+  $("cSave").disabled=true;
+  try{await S.db.collection("cams").doc(uid()).set(doc);["cId","cSet","cCol"].forEach(k=>$(k).value="");$("cCancel").onclick();toast("Camera added")}
+  catch(e){toast("Couldn't save the camera. Check your connection and try again")}finally{$("cSave").disabled=false}};
+
+/* ---- photo queue ---- */
+$("cFiles").onchange=async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;
+  const room=40-S.q.length;if(room<=0){toast("Save or clear the current 40 photos first");return}
+  if(files.length>room)toast(`Only the first ${room} photos were added. Save these, then add the rest`);
+  for(const f of files.slice(0,room)){const ex=await exifDate(f);
+    S.q.push({key:uid(),file:f,thumb:URL.createObjectURL(f),takenAt:ex||localISO(new Date(f.lastModified||Date.now())),tsrc:ex?"camera":"file",status:"new",species:"",count:1,keep:false,conf:"",note:""})}
+  S.q.sort((a,b)=>a.takenAt<b.takenAt?-1:1);renderQueue()};
+$("cClear").onclick=()=>{S.q.forEach(x=>URL.revokeObjectURL(x.thumb));S.q=[];renderQueue()};
+function renderQueue(){const el=$("cQueue");const n=S.q.length,kept=S.q.filter(x=>x.keep&&x.species.trim()).length;
+  $("cIdAll").disabled=!n||S.camBusy||!S.sample;$("cSaveAll").disabled=!kept||S.camBusy;$("cClear").hidden=!n||S.camBusy;
+  $("cSaveAll").textContent=kept?`Save ${kept} kept photo${kept>1?"s":""}`:"Save kept photos";
+  $("cInfo").textContent=n?`${n} photo${n>1?"s":""} loaded. ${S.sample?"Tap Identify, then check each suggestion.":"Type the species for each photo you want to keep."}`:"Choose up to 40 photos at a time from the camera's card. The date and time are read from each photo.";
+  el.innerHTML=S.q.map((x,i)=>`<div class="qitem${x.keep?"":" skip"}" data-i="${i}"><img src="${x.thumb}" alt="Camera photo ${i+1}" loading="lazy">
+    <div class="qbody"><div class="m">${fmtDT(x.takenAt)}${x.tsrc==="file"?" (from file date, check it)":""} · ${x.status==="working"?"Identifying…":x.status==="error"?"Identification failed":x.status==="done"?(x.empty?"Claude: no animal":`Claude: <span class="conf ${esc(x.conf)}">${esc(x.conf)}</span>`):"Not identified yet"}</div>
+      <div class="qrow"><input data-f="species" list="camAnimals" value="${esc(x.species)}" placeholder="Species" aria-label="Species in photo ${i+1}">
+        <input data-f="count" type="number" inputmode="numeric" min="1" value="${esc(x.count)}" aria-label="Number of animals in photo ${i+1}">
+        <button type="button" class="keep" data-k aria-pressed="${x.keep}">${x.keep?"Keep":"Skip"}</button></div>
+      ${x.note?`<div class="m">${esc(x.note)}</div>`:""}</div></div>`).join("");
+  el.querySelectorAll(".qitem").forEach(row=>{const x=S.q[+row.dataset.i];
+    row.querySelectorAll("input[data-f]").forEach(inp=>inp.oninput=()=>{x[inp.dataset.f]=inp.value;
+      if(inp.dataset.f==="species"&&inp.value.trim()&&!x.keep){x.keep=true;row.classList.remove("skip");const kb=row.querySelector("[data-k]");kb.setAttribute("aria-pressed","true");kb.textContent="Keep"}
+      updateQueueButtons()});
+    row.querySelector("[data-k]").onclick=()=>{x.keep=!x.keep;renderQueue()}})}
+function updateQueueButtons(){const kept=S.q.filter(x=>x.keep&&x.species.trim()).length;$("cSaveAll").disabled=!kept||S.camBusy;$("cSaveAll").textContent=kept?`Save ${kept} kept photo${kept>1?"s":""}`:"Save kept photos"}
+
+$("cIdAll").onclick=async()=>{if(!S.sample||S.camBusy)return;const site=$("cSite").value,st=siteOf(site)||{};
+  const animals=(st.animals||[]).filter(a=>a!=="Unknown");S.camBusy=true;renderQueue();
+  for(const x of S.q){if(x.status==="done")continue;x.status="working";renderQueue();
+    try{x.small=x.small||await compress(x.file,1024,.8);
+      const prompt=`You are helping a wildlife ecologist sort camera-trap photos from ${st.name||"a field site"}${st.country?", "+st.country:""}${st.description?" ("+st.description+")":""}.
+Animals known at this site: ${animals.length?animals.join(", "):"not listed"}.
+Night photos may be black-and-white infrared; animals may be partly hidden, blurred or only eyes reflecting. Photos are often empty, triggered by moving vegetation.
+Look at the attached photo. Return JSON only:
+{"empty":true or false,"species":"common name from the site list if possible, or Unknown","count":number of individuals visible,"confidence":"high|medium|low","note":"one short sentence on what you see"}`;
+      const r=await S.sample.json(prompt,{images:[x.small],modelTier:"default"});
+      x.empty=!!(r&&r.empty);x.species=x.empty?"":String((r&&r.species)||"").trim();x.count=x.empty?1:Math.max(1,parseInt(r&&r.count)||1);
+      x.conf=["high","medium","low"].includes(r&&r.confidence)?r.confidence:"low";x.note=String((r&&r.note)||"").slice(0,200);x.keep=!x.empty&&!!x.species;x.aiSp=x.empty?null:x.species;x.status="done"}
+    catch(e){x.status="error";
+      if(e&&e.code==="rate_limited"){toast("Too many photos at once. Wait a minute, then tap Identify again");break}
+      if(e&&e.code==="not_granted"){toast("Identification needs your permission to send photos to Claude");break}}}
+  S.camBusy=false;renderQueue()};
+
+$("cSaveAll").onclick=async()=>{const cam=S.cams.find(c=>c.id===$("cCam").value);if(!cam){toast("Choose the camera these photos came from");return}
+  const items=S.q.filter(x=>x.keep&&x.species.trim());if(!items.length)return;
+  if(!S.db){toast("Sign in to save camera records");return}
+  S.camBusy=true;renderQueue();const keepPh=$("cKeepPh").checked&&!!S.assets;let n=0,fail=0;
+  for(const x of items){try{let photoId=null;if(keepPh){const b=x.small||await compress(x.file,1280,.75);photoId=(await S.assets.upload(b)).id}
+      const r={id:uid(),cam:cam.id,camId:cam.camId,site:cam.site,plot:cam.plot||"",takenAt:x.takenAt,timeSource:x.tsrc,species:x.species.trim(),count:Math.max(1,parseInt(x.count)||1),
+        certainty:x.status==="done"&&!x.empty?x.conf:"manual",aiSpecies:x.aiSp||null,aiAgreed:x.aiSp?x.aiSp.toLowerCase()===x.species.trim().toLowerCase():null,photoId,lat:cam.lat??null,lon:cam.lon??null,weatherStatus:cam.lat!=null&&cam.lon!=null?"pending":"none",createdAt:new Date().toISOString()};if(S.myId)r.observerId=S.myId;
+      await S.db.collection("camobs").doc(r.id).set(r);x.saved=true;n++}catch(e){fail++}}
+  S.q.filter(x=>x.saved).forEach(x=>URL.revokeObjectURL(x.thumb));S.q=S.q.filter(x=>!x.saved);S.camBusy=false;renderQueue();
+  toast(fail?`Saved ${n}, ${fail} failed. Try saving again`:`Saved ${n} detection${n===1?"":"s"}`)};
+
+/* ---- analysis ---- */
+function camEvents(dets){const sorted=[...dets].sort((a,b)=>a.takenAt<b.takenAt?-1:1),lastT={},lastE={},ev=[];
+  sorted.forEach(d=>{const key=d.cam+"|"+d.species.toLowerCase(),t=Date.parse(d.takenAt);
+    if(lastE[key]&&Number.isFinite(t)&&t-lastT[key]<=30*60000)lastE[key].n=Math.max(lastE[key].n,d.count||1);
+    else{const e={...d,n:d.count||1};ev.push(e);lastE[key]=e}lastT[key]=t});return ev}
+function actChart(h){const W=640,H=170,l=30,r=8,t=10,b=24,iw=W-l-r,ih=H-t-b,mx=Math.max(1,...h),bw=iw/24;let g="";
+  [0,.5,1].forEach(f=>{const v=Math.round(mx*f),y=t+ih-(v/mx)*ih;g+=`<line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" style="stroke:var(--line)"/><text x="${l-6}" y="${y+4}" text-anchor="end" font-size="11" style="fill:var(--muted)">${v}</text>`});
+  h.forEach((v,i)=>{const bh=v/mx*ih;if(v)g+=`<rect x="${l+i*bw+2}" y="${t+ih-bh}" width="${bw-4}" height="${bh}" rx="2" style="fill:var(--ochre)"><title>${pad2(i)}:00–${pad2(i)}:59 · ${v} event${v>1?"s":""}</title></rect>`;
+    if(i%3===0)g+=`<text x="${l+i*bw+bw/2}" y="${H-7}" text-anchor="middle" font-size="11" style="fill:var(--muted)">${pad2(i)}</text>`});
+  return`<div class="chartwrap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Independent events by hour of day">${g}</svg></div>`}
+function renderCams(){fillCamSites();const site=$("cSite").value,cams=siteCams(site),st=siteOf(site);
+  $("camAnimals").innerHTML=[...new Set([...((st&&st.animals)||[]),...S.camobs.filter(d=>d.site===site).map(d=>d.species)])].map(a=>`<option value="${esc(a)}">`).join("");
+  const cur=$("cCam").value;$("cCam").innerHTML=cams.length?cams.map(c=>`<option value="${esc(c.id)}">${esc(c.camId)}${c.plot?" · plot "+esc(c.plot):""}</option>`).join(""):`<option value="">Add a camera first</option>`;
+  if(cams.some(c=>c.id===cur))$("cCam").value=cur;
+  const dets=S.camobs.filter(d=>d.site===site&&d.species);const byCam={};dets.forEach(d=>byCam[d.cam]=(byCam[d.cam]||0)+1);
+  $("camList").innerHTML=cams.length?cams.map(c=>{const tn=sumV(trapNightsByMonth(c));const mine=c.observerId===S.myId||S.canEdit;
+    return`<div class="camrow"><div class="row" style="justify-content:space-between"><span class="t">${esc(c.camId)}${c.plot?` · plot ${esc(c.plot)}`:""}</span><span class="tag ${c.collected?"n":"s"}">${c.collected?"collected":"running"}</span></div>
+      <div class="m">${fmtD(c.setup)} – ${c.collected?fmtD(c.collected):"today"} · ${tn} trap-night${tn===1?"":"s"} · ${byCam[c.id]||0} photo${byCam[c.id]===1?"":"s"} with animals</div>
+      ${mine?`<div class="row">${c.collected?"":`<label for="col_${esc(c.id)}" class="vh">Collection date</label><input id="col_${esc(c.id)}" type="date" style="width:auto;padding:6px 8px" data-colin="${esc(c.id)}"><button class="btn ghost small" type="button" data-col="${esc(c.id)}">Mark collected</button>`}
+        <button class="btn ghost small" type="button" data-cdel="${esc(c.id)}">${S.camDel===c.id?"Confirm remove":"Remove"}</button></div>`:""}</div>`}).join("")
+    :`<div class="empty">No cameras registered at this site yet. Add each camera with its set-up date so detection rates can be calculated.</div>`;
+  $("camList").querySelectorAll("[data-col]").forEach(b=>b.onclick=async()=>{const id=b.dataset.col,v=$("col_"+id).value,c=S.cams.find(x=>x.id===id);
+    if(!v){toast("Pick the collection date first");return}if(c&&v<c.setup){toast("The collection date is before the set-up date");return}
+    try{await S.db.collection("cams").doc(id).update({collected:v});toast("Camera marked as collected")}catch(e){toast("Couldn't update the camera. Check your connection")}});
+  $("camList").querySelectorAll("[data-cdel]").forEach(b=>b.onclick=async()=>{const id=b.dataset.cdel;if(S.camDel!==id){S.camDel=id;renderCams();return}S.camDel=null;
+    try{await S.db.collection("cams").doc(id).delete();toast("Camera removed. Its saved photos stay in the records")}catch(e){toast("Couldn't remove: you can only remove cameras you added")}});
+  renderQueue();
+  /* results */
+  const out=$("camOut");
+  if(!cams.length&&!dets.length){out.innerHTML=`<div class="empty">Results appear once cameras are registered and photos saved: detection rate per species (events per 100 trap-nights), daily activity, and comparison with browsing and the satellite phenology stage.</div>`;return}
+  const tnM={},tnPlot={};cams.forEach(c=>{const m=trapNightsByMonth(c);Object.entries(m).forEach(([k,v])=>tnM[k]=(tnM[k]||0)+v);const p=c.plot||"(no plot)";tnPlot[p]=(tnPlot[p]||0)+sumV(m)});
+  const TN=sumV(tnM),ev=camEvents(dets);const sp={};ev.forEach(e=>{const o=sp[e.species]||(sp[e.species]={ev:0,mx:0,ph:0});o.ev++;o.mx=Math.max(o.mx,e.n)});dets.forEach(d=>{if(sp[d.species])sp[d.species].ph++});
+  const rows=Object.entries(sp).sort((a,b)=>b[1].ev-a[1].ev);const rai=e=>TN?(e/TN*100):null;
+  let h=`<div class="stats"><div class="stat"><b>${cams.length}</b><span>cameras</span></div><div class="stat"><b>${TN}</b><span>trap-nights</span></div>
+    <div class="stat"><b>${ev.length}</b><span>independent events</span></div><div class="stat"><b>${rows.length}</b><span>species detected</span></div></div>`;
+  if(rows.length){h+=`<h3>Detection rate</h3><p class="hint">Independent events per 100 trap-nights. Photos of the same species at the same camera within 30 minutes count as one event.</p>
+    <div class="tablewrap"><table><thead><tr><th>Species</th><th>Events</th><th>Per 100 trap-nights</th><th>Photos</th><th>Max group</th></tr></thead><tbody>
+    ${rows.map(([k,o])=>`<tr><td>${esc(k)}</td><td class="num">${o.ev}</td><td class="num">${rai(o.ev)==null?"–":rai(o.ev).toFixed(1)}</td><td class="num">${o.ph}</td><td class="num">${o.mx}</td></tr>`).join("")}</tbody></table></div>`;
+    if(!S.actSp||!sp[S.actSp])S.actSp="";
+    const evA=S.actSp?ev.filter(e=>e.species===S.actSp):ev,hrs=Array(24).fill(0);evA.forEach(e=>{const hh=parseInt(String(e.takenAt).slice(11,13));if(hh>=0&&hh<24)hrs[hh]++});
+    h+=`<h3>Daily activity</h3><label for="cAct" style="max-width:320px">Species<select id="cAct"><option value="">All species</option>${rows.map(([k])=>`<option value="${esc(k)}"${k===S.actSp?" selected":""}>${esc(k)}</option>`).join("")}</select></label>`+actChart(hrs)+`<p class="hint" style="margin-top:6px">Independent events by hour of the day, from the camera clock.</p>`;
+    const d=S.pheno[site];if(d&&Array.isArray(d.months)){const V=d.mean.map(v=>fin(v)?Number(v):null),stg=stages(V),sOf=k=>{const i=d.months.indexOf(k);return i<0?null:stg[i]};
+      const tS={},eS={};Object.entries(tnM).forEach(([k,v])=>{const s=sOf(k)||"none";tS[s]=(tS[s]||0)+v});ev.forEach(e=>{const s=sOf(String(e.takenAt).slice(0,7))||"none";eS[s]=(eS[s]||0)+1});
+      const lst=Object.keys(tS).filter(s=>tS[s]>0);if(lst.length){const vals=lst.map(s=>[(STAGE[s]||["Outside satellite record"])[0]+` (${tS[s]} trap-nights)`,(eS[s]||0)/tS[s]*100]);
+        h+=`<h3>Activity by satellite stage</h3><p class="hint">Events per 100 trap-nights, grouped by the site's phenology stage in each month.</p>`+bars(vals,Math.max(...vals.map(v=>v[1]),1),v=>v.toFixed(1))}}
+    const evP={};ev.forEach(e=>{const p=e.plot||"(no plot)";evP[p]=(evP[p]||0)+1});const plants=S.obs.filter(r=>r.kind==="plant"&&r.site===site);
+    const plots=Object.keys(tnPlot);if(plots.length){h+=`<h3>By plot</h3><p class="hint">Animal activity at each camera plot next to the share of recorded plants browsed there.</p>
+      <div class="tablewrap"><table><thead><tr><th>Plot</th><th>Trap-nights</th><th>Events</th><th>Per 100 trap-nights</th><th>Plants browsed</th></tr></thead><tbody>
+      ${plots.map(p=>{const pl=plants.filter(r=>r.plot===p);return`<tr><td>${esc(p)}</td><td class="num">${tnPlot[p]}</td><td class="num">${evP[p]||0}</td><td class="num">${tnPlot[p]?((evP[p]||0)/tnPlot[p]*100).toFixed(1):"–"}</td><td class="num">${pl.length?pct(pl.filter(r=>r.used).length/pl.length)+` (${pl.length})`:"–"}</td></tr>`}).join("")}</tbody></table></div>`}}
+  else h+=`<p class="hint" style="margin-top:12px">No animal photos saved for this site yet.</p>`;
+  h+=aiAgreement(dets.filter(d=>d.aiSpecies).map(d=>({aiSuggestion:d.aiSpecies,aiAgreed:d.aiAgreed})));
+  out.innerHTML=h;const ca=$("cAct");if(ca)ca.onchange=()=>{S.actSp=ca.value;renderCams()}}
+$("camCsv").onclick=async()=>{const site=$("cSite").value,rows=S.camobs.filter(d=>d.site===site);if(!rows.length){toast("No camera records to export for this site");return}
+  if(!S.dl){toast("Export isn't available in this view");return}
+  const cols=["site","plot","camId","takenAt","timeSource","species","count","certainty","photoId","createdAt",...WX_COLS.filter(c=>c.startsWith("wx_"))],cell=v=>{if(v==null)return"";const s=String(v);return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const csv=[cols.join(","),...rows.sort((a,b)=>a.takenAt<b.takenAt?-1:1).map(r=>cols.map(c=>cell(wxCell(r,c))).join(","))].join("\n");
+  try{await S.dl.save({filename:`davigherbivores_cameras_${site}_${new Date().toISOString().slice(0,10)}.csv`,data:csv})}catch(e){if(e&&e.code!=="declined")toast("Export failed: "+(e.message||e.code))}};
+
+/* ---------- leaf size from a photo ----------
+   Scale comes from the AREA of a reference of known size (thousands of pixels, so far more precise than tapping two ruler marks).
+   Leaf and reference are separated from the white paper by colour difference with an automatic (Otsu) threshold, then grown from the tapped point. */
+const LT={img:null,W:0,H:0,feat:null,otsu:0,ref:null,refShape:null,refTap:null,leaf:null,leafShape:null,leafTap:null,mmPerPx:null,step:"",mode:"leaf",result:null,usedFor:null};
+(()=>{const v=LS.get("dg_ltRef",null);if(v){$("ltShape").value=v.shape||"square";$("ltSize").value=v.size||20}})();
+const ltSay=t=>$("ltStep").textContent=t;
+$("ltOpen").onclick=()=>{$("leafTool").hidden=false;$("ltOpen").hidden=true;if(!LT.img)ltSay("Take a photo of the leaf with the reference beside it.");ltAccSummary()};
+$("ltClose").onclick=()=>{$("leafTool").hidden=true;$("ltOpen").hidden=false};
+$("ltCheck").onclick=()=>{LT.mode=LT.mode==="check"?"leaf":"check";$("ltKnownWrap").hidden=LT.mode!=="check";$("ltCheck").textContent=LT.mode==="check"?"Back to measuring leaves":"Accuracy check";
+  LT.leaf=null;LT.leafTap=null;if(LT.img){LT.step=LT.ref?"leaf":"ref";ltDraw()}
+  ltSay(LT.mode==="check"?"Accuracy check: photograph a shape of known area (for example a 4 × 4 cm square cut from green paper) beside the reference, then tap the reference and the shape.":(LT.img?(LT.ref?"Tap the leaf.":"Step 1: tap the reference."):"Take a photo of the leaf with the reference beside it."));ltShow()};
+const ltLoad=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const url=URL.createObjectURL(f),img=new Image();
+  img.onload=()=>{const s=Math.min(1,1600/Math.max(img.width,img.height)),W=Math.round(img.width*s),H=Math.round(img.height*s),c=$("ltCanvas");c.width=W;c.height=H;
+    const ctx=c.getContext("2d",{willReadFrequently:true});ctx.drawImage(img,0,0,W,H);URL.revokeObjectURL(url);
+    Object.assign(LT,{img:ctx.getImageData(0,0,W,H),W,H,ref:null,refShape:null,refTap:null,leaf:null,leafShape:null,leafTap:null,mmPerPx:null,result:null,step:"ref"});
+    ltFeatures();c.hidden=false;$("ltSensWrap").hidden=false;ltDraw();ltShow();
+    ltSay(`Step 1: tap the reference ${$("ltShape").value==="square"?"square":"circle"}.`)};
+  img.onerror=()=>{URL.revokeObjectURL(url);toast("Couldn't read that photo")};img.src=url};
+$("ltCam").onchange=ltLoad;$("ltGal").onchange=ltLoad;
+function ltFeatures(){const{W,H}=LT,d=LT.img.data,n=W*H,b=Math.max(2,Math.round(Math.min(W,H)*.03)),rs=[],gs=[],bs=[];
+  for(let y=0;y<H;y+=2)for(let x=0;x<W;x+=2)if(x<b||y<b||x>=W-b||y>=H-b){const i=(y*W+x)*4;rs.push(d[i]);gs.push(d[i+1]);bs.push(d[i+2])}
+  const med=a=>{a.sort((p,q)=>p-q);return a[a.length>>1]},R0=med(rs),G0=med(gs),B0=med(bs),S0=R0+G0+B0+1,r0=R0/S0,g0=G0/S0;
+  /* colour difference from the paper: chromaticity (leaves are green or brown) plus only large brightness drops (a dark reference),
+     so grey shadows and uneven light on the paper are not counted as leaf */
+  const F=new Float32Array(n);
+  for(let p=0,i=0;p<n;p++,i+=4){const s=d[i]+d[i+1]+d[i+2]+1;F[p]=(Math.abs(d[i]/s-r0)+Math.abs(d[i+1]/s-g0))*3+Math.max(0,(S0-s)/765-.3)}
+  /* threshold from the paper itself: median + 8 robust SDs of the border pixels, at least 0.06 */
+  const bf=[];for(let y=0;y<H;y+=2)for(let x=0;x<W;x+=2)if(x<b||y<b||x>=W-b||y>=H-b)bf.push(F[y*W+x]);
+  const m0=med(bf.slice()),mad=med(bf.map(v=>Math.abs(v-m0)));
+  LT.feat=F;LT.bg0=m0;LT.otsu=m0+Math.max(8*1.4826*mad,.06);LT.bgOk=Math.min(R0,G0,B0)>110}
+/* sub-pixel area: interior pixels count fully; pixels on the outline, and the ring just outside it, count by how far their colour lies
+   between paper and object, so a slightly blurred edge is neither added nor lost */
+function ltArea(R){const{W,H}=LT,F=LT.feat,m=R.m,v=[];for(let p=0;p<m.length;p+=2)if(m[p])v.push(F[p]);v.sort((a,b)=>a-b);
+  const fo=v[v.length>>1]||1,den=Math.max(1e-6,fo-LT.bg0),fr=p=>Math.min(1,Math.max(0,(F[p]-LT.bg0)/den));
+  const nbs=p=>{const x=p%W,y=(p-x)/W;return[x>0?p-1:-1,x<W-1?p+1:-1,y>0?p-W:-1,y<H-1?p+W:-1]};
+  /* band = outline pixels and the pixels just inside them; ring = pixels just outside */
+  const band=new Uint8Array(m.length),edge=[];
+  for(let p=0;p<m.length;p++)if(m[p]&&nbs(p).some(q=>q>=0&&!m[q])){band[p]=1;edge.push(p)}
+  for(const p of edge)for(const q of nbs(p))if(q>=0&&m[q])band[q]=1;
+  let a=0;const ring=new Uint8Array(m.length);
+  for(let p=0;p<m.length;p++){if(!m[p])continue;if(!band[p]){a++;continue}a+=fr(p)}
+  for(const p of edge)for(const q of nbs(p))if(q>=0&&!m[q]&&!ring[q]){ring[q]=1;a+=fr(q)}
+  return a}
+const ltThr=()=>LT.otsu*(1-Number($("ltSens").value)/100);
+function ltRegion(x0,y0){const{W,H}=LT,F=LT.feat,t=ltThr();let s=-1;
+  for(let r=0;r<=12&&s<0;r++)for(let dy=-r;dy<=r&&s<0;dy++)for(let dx=-r;dx<=r;dx++){const x=x0+dx,y=y0+dy;if(x>=0&&y>=0&&x<W&&y<H&&F[y*W+x]>t){s=y*W+x;break}}
+  if(s<0)return null;const m=new Uint8Array(W*H),st=[s];m[s]=1;let cnt=0,edge=false;
+  while(st.length){const p=st.pop();cnt++;const x=p%W,y=(p-x)/W;if(x===0||y===0||x===W-1||y===H-1)edge=true;
+    if(x>0&&!m[p-1]&&F[p-1]>t){m[p-1]=1;st.push(p-1)}if(x<W-1&&!m[p+1]&&F[p+1]>t){m[p+1]=1;st.push(p+1)}
+    if(y>0&&!m[p-W]&&F[p-W]>t){m[p-W]=1;st.push(p-W)}if(y<H-1&&!m[p+W]&&F[p+W]>t){m[p+W]=1;st.push(p+W)}}
+  return{m,cnt,edge,seed:s}}
+function ltFillHoles(R){const{W,H}=LT,m=R.m,o=new Uint8Array(W*H),st=[],push=p=>{if(!m[p]&&!o[p]){o[p]=1;st.push(p)}};
+  for(let x=0;x<W;x++){push(x);push((H-1)*W+x)}for(let y=0;y<H;y++){push(y*W);push(y*W+W-1)}
+  while(st.length){const p=st.pop(),x=p%W,y=(p-x)/W;if(x>0)push(p-1);if(x<W-1)push(p+1);if(y>0)push(p-W);if(y<H-1)push(p+W)}
+  for(let p=0;p<W*H;p++)if(!m[p]&&!o[p]){m[p]=1;R.cnt++}return R}
+function ltShapeOf(R){const W=LT.W,m=R.m;let n=0,sx=0,sy=0;for(let p=0;p<m.length;p++)if(m[p]){n++;sx+=p%W;sy+=(p/W|0)}
+  const mx=sx/n,my=sy/n;let cxx=0,cyy=0,cxy=0;for(let p=0;p<m.length;p++)if(m[p]){const dx=p%W-mx,dy=(p/W|0)-my;cxx+=dx*dx;cyy+=dy*dy;cxy+=dx*dy}
+  cxx/=n;cyy/=n;cxy/=n;const tr=cxx+cyy,dd=Math.sqrt(Math.max(0,tr*tr/4-(cxx*cyy-cxy*cxy))),l1=tr/2+dd,l2=tr/2-dd;
+  const ang=.5*Math.atan2(2*cxy,cxx-cyy),ux=Math.cos(ang),uy=Math.sin(ang);let a0=1e9,a1=-1e9,b0=1e9,b1=-1e9;
+  for(let p=0;p<m.length;p++)if(m[p]){const dx=p%W-mx,dy=(p/W|0)-my,a=dx*ux+dy*uy,b=-dx*uy+dy*ux;if(a<a0)a0=a;if(a>a1)a1=a;if(b<b0)b0=b;if(b>b1)b1=b}
+  return{len:a1-a0+1,wid:b1-b0+1,ar:Math.sqrt(l1/Math.max(1e-9,l2))}}
+function ltSetRef(){const R=ltRegion(LT.refTap[0],LT.refTap[1]);if(!R)return false;const sz=Number($("ltSize").value);
+  const real=$("ltShape").value==="square"?sz*sz:Math.PI*sz*sz/4;R.area=ltArea(R);LT.ref=R;LT.refShape=ltShapeOf(R);LT.mmPerPx=Math.sqrt(real/R.area);return true}
+function ltSetLeaf(){const R=ltRegion(LT.leafTap[0],LT.leafTap[1]);if(!R)return false;if($("ltHoles").checked)ltFillHoles(R);R.area=ltArea(R);LT.leaf=R;LT.leafShape=ltShapeOf(R);return true}
+$("ltCanvas").onclick=e=>{if(!LT.img)return;const r=e.currentTarget.getBoundingClientRect(),x=Math.round((e.clientX-r.left)/r.width*LT.W),y=Math.round((e.clientY-r.top)/r.height*LT.H);
+  if(LT.step==="ref"){if(!(Number($("ltSize").value)>0)){toast("Enter the reference size in mm first");return}
+    LT.refTap=[x,y];if(!ltSetRef()){LT.ref=null;ltSay("Nothing found there. Tap right on the reference, or raise the edge sensitivity.");return}
+    LS.set("dg_ltRef",{shape:$("ltShape").value,size:$("ltSize").value});LT.step="leaf";ltDraw();ltShow();ltSay(LT.mode==="check"?"Step 2: tap the test shape.":"Step 2: tap the leaf.");return}
+  if(LT.ref&&LT.ref.m[y*LT.W+x]){ltSay("That is the reference. Tap the leaf.");return}
+  LT.leafTap=[x,y];if(!ltSetLeaf()){LT.leaf=null;ltSay("Nothing found there. Tap right on the leaf, or raise the edge sensitivity.");return}
+  if(LT.ref&&LT.leaf.m[LT.ref.seed]){ltSay("The leaf and the reference touch, so they can't be told apart. Move them apart and take the photo again.");LT.leaf=null;ltDraw();ltShow();return}
+  LT.step="done";ltDraw();ltShow();ltSay("Check that the orange outline covers exactly the "+(LT.mode==="check"?"shape":"leaf")+". Tap another one to measure it instead.")};
+function ltRecompute(){if(!LT.img)return;if(LT.refTap&&!ltSetRef())LT.ref=null;if(LT.leafTap&&LT.ref&&!ltSetLeaf())LT.leaf=null;ltDraw();ltShow()}
+$("ltSens").oninput=ltRecompute;$("ltHoles").onchange=ltRecompute;$("ltShape").onchange=$("ltSize").onchange=$("ltKnown").oninput=ltRecompute;
+function ltDraw(){const c=$("ltCanvas"),ctx=c.getContext("2d"),im=new ImageData(new Uint8ClampedArray(LT.img.data),LT.W,LT.H),d=im.data;
+  const tint=(R,col)=>{if(!R)return;for(let p=0;p<R.m.length;p++)if(R.m[p]){const i=p*4;d[i]=d[i]*.4+col[0]*.6;d[i+1]=d[i+1]*.4+col[1]*.6;d[i+2]=d[i+2]*.4+col[2]*.6}};
+  tint(LT.ref,[40,110,230]);tint(LT.leaf,[240,140,20]);ctx.putImageData(im,0,0)}
+function ltShow(){const out=$("ltRes"),warn=[];LT.result=null;let h="";
+  if(LT.img&&!LT.bgOk)warn.push("The background is not light enough. Use white paper for reliable edges.");
+  if(LT.ref){const sh=LT.refShape;if(LT.ref.edge)warn.push("The reference touches the edge of the photo.");
+    if(LT.ref.cnt<2500)warn.push("The reference is small in the photo. Move the phone closer or use a bigger reference.");
+    if(LT.ref.cnt>LT.W*LT.H*.25)warn.push("The reference selection spread into the background. Lower the edge sensitivity.");
+    else if(sh.ar>1.04)warn.push(`The reference looks ${Math.round((sh.ar-1)*100)}% stretched: the phone was probably tilted, or the reference casts a shadow. Hold the phone flat above it.`)}
+  if(LT.leaf&&LT.ref){const L=LT.leaf,s=LT.leafShape,k=LT.mmPerPx,area=L.area*k*k/100,len=s.len*k,wid=s.wid*k;
+    if(L.edge)warn.push("The "+(LT.mode==="check"?"shape":"leaf")+" touches the edge of the photo, so part of it may be cut off.");
+    if(L.cnt<4000)warn.push("The "+(LT.mode==="check"?"shape":"leaf")+" covers few pixels. Move the phone closer for a more precise measurement.");
+    if(L.cnt>LT.W*LT.H*.6)warn.push("The selection spread into the background. Lower the edge sensitivity.");
+    LT.result={area,len,wid,ok:!warn.length};
+    h+=`<div class="stats"><div class="stat"><b>${area.toFixed(2)}</b><span>leaf area, cm²</span></div><div class="stat"><b>${len.toFixed(1)}</b><span>length, mm</span></div>
+      <div class="stat"><b>${wid.toFixed(1)}</b><span>width, mm</span></div><div class="stat"><b>${(1/k).toFixed(1)}</b><span>pixels per mm</span></div></div>`;
+    if(LT.mode==="check"){const kn=Number($("ltKnown").value);if(kn>0){const err=(area-kn)/kn*100;LT.result.err=err;
+      h+=`<p class="${Math.abs(err)<=5?"ltok":"stg"}" style="margin:8px 0 0${Math.abs(err)<=5?"":";color:var(--bad)"}">Measured ${area.toFixed(2)} cm² against ${kn} cm²: error ${err>0?"+":""}${err.toFixed(1)}%${Math.abs(err)<=5?", within 5%":", more than 5%"}.</p>`}
+      else h+=`<p class="hint" style="margin:8px 0 0">Enter the known area above to see the error.</p>`}}
+  if(warn.length)h+=`<div class="ltwarn" style="margin-top:8px"><b>Check before using this measurement</b>${warn.map(w=>`<span>${esc(w)}</span>`).join("")}</div>`;
+  else if(LT.result)h+=`<p class="ltok" style="margin:8px 0 0">Photo quality checks passed.</p>`;
+  out.innerHTML=h;const u=$("ltUse");u.hidden=!LT.result||(LT.mode==="check"&&LT.result.err==null);
+  u.textContent=LT.mode==="check"?"Record this check":warn.length?"Use anyway":"Use these values"}
+$("ltUse").onclick=()=>{const r=LT.result;if(!r)return;
+  if(LT.mode==="check"){const a=LS.get("dg_ltChecks",[]);a.push({err:+r.err.toFixed(2),at:new Date().toISOString()});LS.set("dg_ltChecks",a.slice(-30));ltAccSummary();toast("Accuracy check recorded");return}
+  $("leafA").value=r.area.toFixed(2);$("leafL").value=r.len.toFixed(1);$("leafW").value=r.wid.toFixed(1);LT.usedFor=$("leafA").value;
+  toast(r.ok?"Leaf size filled in":"Leaf size filled in. Note the photo warnings in the record notes");
+  if(!r.ok&&!/photo warnings/.test($("notes").value))$("notes").value=($("notes").value?$("notes").value+" ":"")+"Leaf area: photo warnings.";
+  LT.leaf=null;LT.leafTap=null;LT.step="leaf";ltDraw();ltShow();ltSay("Tap another leaf in the same photo, or take a new photo.")};
+function ltAccSummary(){const a=LS.get("dg_ltChecks",[]),el=$("ltAcc");if(!a.length){el.textContent="Tip: run a few accuracy checks with a paper shape of known area before measuring. The results show here.";return}
+  const ab=a.map(x=>Math.abs(x.err)),mean=ab.reduce((s,x)=>s+x,0)/ab.length,worst=Math.max(...ab),within=ab.filter(x=>x<=5).length;
+  el.innerHTML=`Accuracy checks on this phone: <b>${a.length}</b>, mean error <b>${mean.toFixed(1)}%</b>, worst <b>${worst.toFixed(1)}%</b>, <b>${Math.round(within/ab.length*100)}%</b> within 5%. <button id="ltAccClear" class="btn ghost small" type="button" style="margin-left:6px">Clear</button>`;
+  $("ltAccClear").onclick=()=>{LS.set("dg_ltChecks",[]);ltAccSummary()}}
+
+/* ---------- species name check: one spelling per species ---------- */
+const normSp=s=>{s=String(s||"").replace(/\s+/g," ").trim();return s?s[0].toUpperCase()+s.slice(1):""};
+function lev(a,b){a=a.toLowerCase();b=b.toLowerCase();if(Math.abs(a.length-b.length)>3)return 9;const d=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){let prev=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));prev=t}}return d[b.length]}
+function knownSp(){return[...new Set(S.obs.filter(r=>r.kind==="plant"&&r.species).map(r=>normSp(r.species)))]}
+function spCheck(sp){const k=knownSp(),lo=sp.toLowerCase();const ex=k.find(x=>x.toLowerCase()===lo);if(ex)return{exact:ex};
+  if(/^(unknown|unidentified|sp\.?)$/i.test(sp))return{};let best=null,bd=9;
+  k.forEach(x=>{const dd=lev(sp,x);const lim=Math.max(x.length,sp.length)>10?2:1;if(dd<=lim&&dd<bd){bd=dd;best=x}});return best?{similar:best}:{}}
+function showSpHint(){const el=$("spHint"),sp=normSp($("species").value);if(!sp){el.hidden=true;return}const c=spCheck(sp);
+  if(!c.similar){el.hidden=true;return}el.hidden=false;el.innerHTML=`Similar name already recorded:<button type="button">${esc(c.similar)}</button>`;
+  el.querySelector("button").onclick=()=>{$("species").value=c.similar;el.hidden=true}}
+let spT;$("species").addEventListener("input",()=>{clearTimeout(spT);spT=setTimeout(showSpHint,300)});
+
+/* ---------- statistics ---------- */
+function normInv(p){const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.357751867269,-30.66479806614716,2.506628277459239],b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572],c=[-.007784894002430293,-.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783],d=[.007784695709041462,.3224671290700398,2.445134137142996,3.754408661907416];
+  const q=Math.min(p,1-p);let x;if(q<.02425){const t=Math.sqrt(-2*Math.log(q));x=(((((c[0]*t+c[1])*t+c[2])*t+c[3])*t+c[4])*t+c[5])/((((d[0]*t+d[1])*t+d[2])*t+d[3])*t+1)}
+  else{const t=q-.5,r=t*t;x=(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*t/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)}return p<.5?x:-x}
+function lgam(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,.1208650973866179e-2,-.5395239384953e-5];let y=x,t=x+5.5;t-=(x+.5)*Math.log(t);let s=1.000000000190015;for(const v of c)s+=v/++y;return-t+Math.log(2.5066282746310005*s/x)}
+function gammaQ(a,x){if(x<=0)return 1;if(x<a+1){let ap=a,sum=1/a,del=sum;for(let n=0;n<500;n++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-12)break}return 1-sum*Math.exp(-x+a*Math.log(x)-lgam(a))}
+  let b=x+1-a,c=1e300,d=1/b,hh=d;for(let i=1;i<500;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;const del=d*c;hh*=del;if(Math.abs(del-1)<1e-12)break}return Math.exp(-x+a*Math.log(x)-lgam(a))*hh}
+const chiP=(chi,df)=>gammaQ(df/2,chi/2);
+const fmtP=p=>p<.001?"p < 0.001":"p = "+p.toFixed(3);
+/* Neu et al. (1974): chi-square test of use against availability, with Bonferroni intervals for each species' share of use */
+function neuTest(rows,B){const k=rows.length;if(k<2||B<2)return null;const z=normInv(1-.05/(2*k));let chi=0,lowE=0;
+  rows.forEach(x=>{const E=B*x.pAv;chi+=(x.b-E)**2/E;if(E<5)lowE++;const u=x.b/B,se=Math.sqrt(u*(1-u)/B),lo=u-z*se,hi=u+z*se;x.neu=x.pAv<lo?"pref":x.pAv>hi?"avoid":"prop"});
+  return{chi,df:k-1,p:chiP(chi,k-1),lowE,k}}
+function rankArr(a){const idx=a.map((v,i)=>[v,i]).sort((p,q)=>p[0]-q[0]),r=Array(a.length);for(let i=0;i<idx.length;){let j=i;while(j+1<idx.length&&idx[j+1][0]===idx[i][0])j++;for(let k=i;k<=j;k++)r[idx[k][1]]=(i+j)/2+1;i=j+1}return r}
+function pearson(x,y){const n=x.length,mx=x.reduce((s,v)=>s+v,0)/n,my=y.reduce((s,v)=>s+v,0)/n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2}return sxx&&syy?sxy/Math.sqrt(sxx*syy):0}
+/* Spearman rank correlation with a permutation p-value (exact enough for the few species a study has) */
+function spearman(x,y){const rx=rankArr(x),ry=rankArr(y),rho=pearson(rx,ry);let seed=12345,ge=0;const N=2000,rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  const yy=ry.slice();for(let i=0;i<N;i++){for(let j=yy.length-1;j>0;j--){const k=Math.floor(rnd()*(j+1));[yy[j],yy[k]]=[yy[k],yy[j]]}if(Math.abs(pearson(rx,yy))>=Math.abs(rho)-1e-12)ge++}
+  return{rho,p:(ge+1)/(N+1),n:x.length}}
+
+/* ---------- nutrition (lab results) ---------- */
+S.nutr={};const NUT=[["CP","Crude protein"],["NDF","NDF (fibre)"],["ADF","ADF (fibre)"],["ADL","Lignin (ADL)"],["CT","Condensed tannins"],["TP","Total phenolics"],["Ash","Ash"],["DM","Dry matter"]];
+const nutId=s=>String(s).trim().replace(/[^A-Za-z0-9_\-.~:@+]/g,"_").slice(0,180);
+$("nuTpl").onclick=async()=>{if(!S.dl){toast("Download isn't available in this view");return}
+  const rows=S.obs.filter(r=>r.kind==="plant"&&r.labId).sort((a,b)=>String(a.labId).localeCompare(String(b.labId)));
+  const cell=v=>{if(v==null)return"";const s=String(v);return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const csv=["sample_id,species,site,plot,date,"+NUT.map(n=>n[0]).join(","),...rows.map(r=>[r.labId,r.species,siteName(r),r.plot,String(r.createdAt).slice(0,10)].map(cell).join(",")+",".repeat(NUT.length))].join("\n");
+  try{await S.dl.save({filename:"davigherbivores_lab_template.csv",data:csv})}catch(e){if(e&&e.code!=="declined")toast("Download failed")}};
+$("nuFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("nuMsg");
+  if(!S.db){toast("Connect to the internet to import lab results");return}
+  try{const rows=parseCSV(await f.text());if(rows.length<2)throw new Error("The file has no data rows");
+    const hd=rows[0].map(s=>s.trim().toLowerCase().replace(/[^a-z0-9]/g,""));const iId=hd.findIndex(x=>["sampleid","labid","sample","id","sampleno"].includes(x));
+    if(iId<0)throw new Error("The file needs a sample_id column");
+    const map={cp:"CP",crudeprotein:"CP",protein:"CP",ndf:"NDF",adf:"ADF",adl:"ADL",lignin:"ADL",ct:"CT",condensedtannins:"CT",tannins:"CT",tannin:"CT",tp:"TP",totalphenolics:"TP",phenolics:"TP",ash:"Ash",dm:"DM",drymatter:"DM"};
+    const cols=hd.map((x,i)=>map[x]?{i,k:map[x]}:null).filter(Boolean);if(!cols.length)throw new Error("No nutrient columns found (CP, NDF, ADF, ADL, CT, TP, Ash or DM)");
+    let n=0,skip=0;msg.textContent="Importing…";
+    for(const r of rows.slice(1)){const id=String(r[iId]||"").trim();if(!id){skip++;continue}const v={};cols.forEach(c=>{const x=parseFloat(String(r[c.i]).replace(",","."));if(Number.isFinite(x))v[c.k]=x});
+      if(!Object.keys(v).length){skip++;continue}await S.db.collection("nutrition").doc(nutId(id)).set({sampleId:id,values:v,source:f.name,importedAt:new Date().toISOString()});n++}
+    const known=new Set(S.obs.filter(r=>r.labId).map(r=>nutId(r.labId)));const unmatched=rows.slice(1).filter(r=>String(r[iId]||"").trim()&&!known.has(nutId(r[iId]))).length;
+    msg.textContent=`Imported ${n} sample${n===1?"":"s"}${skip?`, skipped ${skip} empty row${skip===1?"":"s"}`:""}.${unmatched?` ${unmatched} sample ID${unmatched===1?" doesn't":"s don't"} match any plant record yet.`:""}`;toast("Lab results imported")}
+  catch(err){msg.textContent=err&&err.message?err.message:"Couldn't import that file"}};
+function nutritionAnalysis(plants,rows){const withLab=plants.filter(p=>p.labId&&S.nutr[nutId(p.labId)]);const total=plants.filter(p=>p.labId).length;
+  if(!total)return"";let h=`<h3>Nutrition and preference</h3>`;
+  if(!withLab.length)return h+`<p class="hint">${total} plant${total===1?" has":"s have"} a lab sample ID. Results appear here once the lab CSV is imported below.</p>`;
+  const sp={};withLab.forEach(p=>{const k=p.species.trim(),o=sp[k]||(sp[k]={n:0,v:{}});o.n++;const v=S.nutr[nutId(p.labId)].values||{};NUT.forEach(([c])=>{if(Number.isFinite(v[c]))(o.v[c]=o.v[c]||[]).push(v[c])})});
+  const Dof=Object.fromEntries(rows.map(x=>[x.k,x.D]));const used=NUT.filter(([c])=>Object.values(sp).some(o=>o.v[c]));const mean=a=>a&&a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
+  h+=`<p class="hint">Mean nutrient content per species (% of dry matter) from ${withLab.length} lab sample${withLab.length===1?"":"s"}, next to the species' selection index.</p>
+    <div class="tablewrap"><table><thead><tr><th>Species</th><th>Samples</th>${used.map(([c])=>`<th>${c}</th>`).join("")}<th>Jacobs D</th></tr></thead><tbody>
+    ${Object.entries(sp).sort((a,b)=>(Dof[b[0]]??-2)-(Dof[a[0]]??-2)).map(([k,o])=>`<tr><td><i>${esc(k)}</i></td><td class="num">${o.n}</td>${used.map(([c])=>`<td class="num">${mean(o.v[c])==null?"–":mean(o.v[c]).toFixed(1)}</td>`).join("")}<td class="num">${Dof[k]==null?"–":Dof[k].toFixed(2)}</td></tr>`).join("")}</tbody></table></div>`;
+  const tests=used.map(([c,l])=>{const pairs=Object.entries(sp).filter(([k,o])=>Dof[k]!=null&&mean(o.v[c])!=null).map(([k,o])=>[mean(o.v[c]),Dof[k]]);if(pairs.length<4)return null;const s=spearman(pairs.map(q=>q[0]),pairs.map(q=>q[1]));return{l,...s}}).filter(Boolean);
+  if(tests.length)h+=`<p class="hint" style="margin-top:12px">Do browsers prefer more nutritious species? Spearman rank correlation between each nutrient and Jacobs' D across species (permutation test, 2,000 shuffles):</p>
+    <div class="tablewrap"><table><thead><tr><th>Nutrient</th><th>Species</th><th>rho</th><th>p</th></tr></thead><tbody>${tests.map(t=>`<tr><td>${esc(t.l)}</td><td class="num">${t.n}</td><td class="num">${t.rho.toFixed(2)}</td><td class="num">${t.p<.001?"<0.001":t.p.toFixed(3)}</td></tr>`).join("")}</tbody></table></div>`;
+  else h+=`<p class="hint" style="margin-top:8px">Correlation tests appear once at least 4 species have both lab results and a selection index.</p>`;
+  return h}
+function aiAgreement(recs){const a=recs.filter(r=>r.aiSuggestion);if(!a.length)return"";const ok=a.filter(r=>r.aiAgreed).length;
+  return`<h3>Photo identification check</h3><p class="hint">Claude's suggestion was kept unchanged in <b>${ok} of ${a.length}</b> records where it was used (${pct(ok/a.length)}). Records where you changed it show where identification needs care.</p>`}
+
+/* ---------- full backup ---------- */
+function bkInfo(){const t=LS.get("dg_lastBackup",null),el=$("bkInfo");if(!el)return;if(!t){el.textContent=S.obs.length?"No full backup from this phone yet. Back up regularly, for example weekly during fieldwork.":"";return}
+  const days=Math.floor((Date.now()-Date.parse(t))/864e5);el.textContent=`Last full backup from this phone: ${new Date(t).toLocaleDateString()}${days>=14?` (${days} days ago, time for a new one)`:""}.`;el.style.color=days>=14?"var(--warn)":""}
+$("bkBtn").onclick=async()=>{if(!S.dl){toast("Backup isn't available in this view");return}if(!S.db){toast("Connect to the internet to back up the shared data");return}
+  $("bkBtn").disabled=true;try{const get=async c=>(await S.db.collection(c).get()).docs.map(d=>({id:d.id,...d.data()}));
+    const data={app:"DaviGherbivores",exportedAt:new Date().toISOString()};for(const c of["sites","obs","cams","camobs","pheno","nutrition"])data[c]=await get(c);
+    await S.dl.save({filename:`davigherbivores_backup_${new Date().toISOString().slice(0,10)}.json`,data:JSON.stringify(data)});LS.set("dg_lastBackup",new Date().toISOString());bkInfo();toast("Backup saved")}
+  catch(e){if(!(e&&e.code==="declined"))toast("Backup failed. Check your connection and try again")}finally{$("bkBtn").disabled=false}};
+
+/* ---------- species suggestions ---------- */
+function updateSpeciesList(){const set=new Set(S.obs.filter(r=>r.kind==="plant"&&r.species).map(r=>r.species.trim()));$("speciesList").innerHTML=[...set].sort().map(s=>`<option value="${esc(s)}">`).join("")}
+
+/* ---------- standalone: Firebase connection ---------- */
+/* The app talks to Firestore through a thin adapter with the same calls it used before.
+   Writes return at once: Firestore keeps them on the phone and sends them when there is signal. */
+const FB={app:null,auth:null,fs:null,subs:[]};S.pend={};
+const clean=d=>JSON.parse(JSON.stringify(d,(k,v)=>v===undefined?null:v));
+function bg(p){p.catch(e=>{console.warn(e);toast(e&&e.code==="permission-denied"?"You don't have permission to change that":"A change couldn't be saved: "+(e&&e.message||e))});return Promise.resolve()}
+function wrapDb(fs){
+  const toSnap=qs=>({docs:qs.docs.map(d=>({id:d.id,data:()=>d.data(),pending:d.metadata.hasPendingWrites})),size:qs.size,empty:qs.empty});
+  const docRef=r=>({id:r.id,set:d=>bg(r.set(clean(d))),update:d=>bg(r.update(clean(d))),delete:()=>bg(r.delete()),get:async()=>{const s=await r.get();return{exists:s.exists,id:s.id,data:()=>s.data()}}});
+  const q=c=>({get:async()=>toSnap(await c.get()),
+    onSnapshot:(next,err)=>{const u=c.onSnapshot({includeMetadataChanges:true},qs=>next(toSnap(qs)),e=>{console.warn(e);err&&err(e)});FB.subs.push(u);return u},
+    orderBy:(...a)=>q(c.orderBy(...a)),limit:n=>q(c.limit(n)),where:(...a)=>q(c.where(...a))});
+  return{collection:p=>{const c=fs.collection(p);return Object.assign(q(c),{doc:id=>docRef(id?c.doc(id):c.doc())})}}}
+
+/* photos are kept in the database as compressed images (no paid storage needed) */
+const photoCache={};
+const photoStore={upload:async blob=>{let b=blob,data=await blobToDataURL(b);
+  for(let i=0;data.length>900000&&i<3;i++){b=await compress(b,[1000,800,640][i],.6);data=await blobToDataURL(b)}
+  const id=uid();photoCache[id]=data;S.db.collection("photos").doc(id).set({data,createdAt:new Date().toISOString(),by:S.myId||null});return{id}}};
+async function loadPhotos(root){for(const img of root.querySelectorAll("img[data-photo]")){const id=img.dataset.photo;if(img.src)continue;
+  if(photoCache[id]){img.src=photoCache[id];continue}
+  try{const d=await S.db.collection("photos").doc(id).get();if(d.exists){photoCache[id]=d.data().data;img.src=photoCache[id]}else img.alt="Photo not synced yet"}catch(e){img.alt="Photo unavailable offline"}}}
+
+/* downloads go straight to the phone or computer */
+const downloader={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data],{type:filename.endsWith(".json")?"application/json":"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}};
+
+/* people: names shown on records */
+S.people={};
+const peopleApi={profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{name:(S.people[i]&&S.people[i].name)||""}]))};
+
+/* sync status: changes waiting on this phone */
+function updatePill(){const p=$("syncPill"),n=Object.values(S.pend).reduce((a,b)=>a+b,0)+S.outbox.length;
+  if(!S.db){p.className="pill";p.textContent=S.loaded?"Signed out":"Connecting…";return}
+  if(n){p.className="pill warn";p.textContent=`${n} waiting to sync`}
+  else{p.className="pill ok";p.textContent=navigator.onLine?"Synced":"Offline"}}
+window.addEventListener("online",updatePill);window.addEventListener("offline",updatePill);
+$("syncPill").onclick=()=>{updatePill();toast(navigator.onLine?"Changes sync automatically while you have signal":"No signal. Records are kept on this phone and sync later")};
+
+/* GPS */
+function useGPS(latId,lonId,btn){if(!navigator.geolocation){toast("This phone can't share its location here");return}
+  const lbl=btn.textContent;btn.disabled=true;btn.textContent="Finding location…";
+  navigator.geolocation.getCurrentPosition(pos=>{const{latitude,longitude,accuracy}=pos.coords;$(latId).value=latitude.toFixed(7);$(lonId).value=longitude.toFixed(7);
+      $(latId).dispatchEvent(new Event("change"));btn.disabled=false;btn.textContent=lbl;toast(`Location set (accurate to about ${Math.round(accuracy)} m)`)},
+    err=>{btn.disabled=false;btn.textContent=lbl;toast(err.code===1?"Location permission was refused. Allow it in the phone's settings":"Couldn't get a GPS fix. Try again in the open")},
+    {enableHighAccuracy:true,timeout:30000,maximumAge:0})}
+$("gpsBtn").onclick=()=>useGPS("lat","lon",$("gpsBtn"));$("cGps").onclick=()=>useGPS("cLat","cLon",$("cGps"));
+
+/* account sheet, install */
+$("acctBtn").onclick=()=>{$("acct").hidden=!$("acct").hidden};
+$("acctSave").onclick=()=>{const n=$("acctName").value.trim();if(!n){toast("Enter your name");return}S.db.collection("people").doc(S.myId).set({name:n,email:FB.auth.currentUser.email,updatedAt:new Date().toISOString()});toast("Name saved")};
+$("signOut").onclick=async()=>{if(S.outbox.length||Object.values(S.pend).some(Boolean)){if(!$("signOut").dataset.sure){$("signOut").dataset.sure="1";$("signOut").textContent="Unsynced changes! Tap again to sign out";return}}
+  await FB.auth.signOut();location.reload()};
+let installEvt=null;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e;$("installBtn").hidden=false});
+$("installBtn").onclick=async()=>{if(!installEvt)return;installEvt.prompt();await installEvt.userChoice;installEvt=null;$("installBtn").hidden=true};
+if(/iphone|ipad/i.test(navigator.userAgent)&&!window.navigator.standalone)$("iosHint").hidden=false;
+
+/* restore a backup from the claude.ai version (owner only) */
+$("restoreFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const msg=$("restoreMsg");
+  if(!navigator.onLine){msg.textContent="Connect to the internet to restore a backup.";return}
+  try{const data=JSON.parse(await f.text());if(data.app!=="DaviGherbivores")throw new Error("This isn't a DaviGherbivores backup file");
+    let n=0;for(const c of["sites","obs","cams","camobs","pheno","nutrition"]){const docs=Array.isArray(data[c])?data[c]:[];
+      for(let i=0;i<docs.length;i+=400){const batch=FB.fs.batch();docs.slice(i,i+400).forEach(d=>{const{id,...rest}=d;if(!id)return;
+          if(rest.photoId){rest.legacyPhotoId=rest.photoId;rest.photoId=null}batch.set(FB.fs.collection(c).doc(String(id)),clean(rest))});
+        msg.textContent=`Copying ${c}…`;await batch.commit();n+=Math.min(400,docs.length-i)}}
+    msg.textContent=`Restored ${n} items from the backup of ${new Date(data.exportedAt).toLocaleDateString()}.`;toast("Backup restored")}
+  catch(err){msg.textContent=err&&err.message?err.message:"Couldn't read that file"}};
+
+/* sign in */
+$("loginForm").onsubmit=async e=>{e.preventDefault();const em=$("lgEmail").value.trim(),pw=$("lgPass").value,m=$("lgMsg");
+  if(!em||!pw){m.textContent="Enter your email and password.";return}$("lgBtn").disabled=true;m.textContent="Signing in…";
+  try{await FB.auth.signInWithEmailAndPassword(em,pw);m.textContent=""}
+  catch(err){m.textContent=({"auth/invalid-credential":"Wrong email or password.","auth/wrong-password":"Wrong email or password.","auth/user-not-found":"No account with this email. Ask your project leader to add you.","auth/too-many-requests":"Too many attempts. Wait a few minutes and try again.","auth/network-request-failed":"No internet. The first sign-in needs a connection."})[err.code]||"Couldn't sign in: "+err.message}
+  finally{$("lgBtn").disabled=false}};
+$("lgReset").onclick=async()=>{const em=$("lgEmail").value.trim();if(!em){$("lgMsg").textContent="Enter your email first.";return}
+  try{await FB.auth.sendPasswordResetEmail(em);$("lgMsg").textContent="Password reset email sent. Check your inbox."}catch(err){$("lgMsg").textContent="Couldn't send the email: "+err.message}};
+
+function showGate(which){document.body.classList.toggle("signedout",which!=="app");$("loginBox").hidden=which!=="login";$("setupBox").hidden=which!=="setup";$("acctBtn").hidden=which!=="app";if(which!=="app")$("acct").hidden=true}
+
+function startData(){const db=S.db,tab=()=>LS.get("dg_tab","record"),pend=(k,snap)=>{S.pend[k]=snap.docs.filter(d=>d.pending).length;updatePill()};
+  db.collection("sites").onSnapshot(snap=>{S.sites=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.name).localeCompare(String(b.name)));LS.set("dg_sites",S.sites);fillSites();const t=tab();if(t==="pheno")renderPheno();if(t==="cams")renderCams()});
+  db.collection("obs").onSnapshot(snap=>{pend("obs",snap);wxSoon();S.obs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));updateSpeciesList();fillAnimals();
+    const t=tab();if(t==="data")renderList();if(t==="analysis")renderAnalysis();if(t==="pheno")renderPheno();if(t==="cams")renderCams()},
+    err=>toast(err&&err.code==="permission-denied"?"Your account can't read the shared records. Ask your project leader":"Lost connection to the shared records"));
+  db.collection("cams").onSnapshot(snap=>{pend("cams",snap);S.cams=snap.docs.map(d=>({id:d.id,...d.data()}));LS.set("dg_cams",S.cams);if(tab()==="cams")renderCams()});
+  db.collection("camobs").onSnapshot(snap=>{pend("camobs",snap);wxSoon();S.camobs=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.takenAt).localeCompare(String(a.takenAt)));if(tab()==="cams")renderCams()});
+  db.collection("photos").limit(1).onSnapshot(()=>{});
+  db.collection("nutrition").onSnapshot(snap=>{S.nutr=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));if(tab()==="analysis")renderAnalysis()});
+  db.collection("pheno").onSnapshot(snap=>{S.pheno=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));LS.set("dg_pheno",S.pheno);if(tab()==="pheno")renderPheno()});
+  db.collection("people").onSnapshot(snap=>{S.people=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()]));const me=S.people[S.myId];if(me&&!$("acctName").value)$("acctName").value=me.name||""});
+  syncOutbox()}
+
+/* ---------- boot ---------- */
+setTab(LS.get("dg_tab","record")==="identify"?"record":LS.get("dg_tab","record"));updatePill();
+(()=>{document.body.classList.add("signedout");const cfg=window.DG_FIREBASE||{};
+  if(!window.firebase||!cfg.apiKey||/PASTE/.test(cfg.apiKey)){S.loaded=true;showGate("setup");updatePill();return}
+  FB.app=firebase.initializeApp(cfg);FB.auth=firebase.auth();FB.fs=firebase.firestore();
+  try{FB.fs.settings({cacheSizeBytes:firebase.firestore.CACHE_SIZE_UNLIMITED,merge:true})}catch(e){}
+  FB.fs.enablePersistence({synchronizeTabs:true}).catch(e=>console.warn("Offline storage unavailable:",e.code));
+  FB.auth.onAuthStateChanged(u=>{S.loaded=true;
+    if(!u){FB.subs.splice(0).forEach(f=>{try{f()}catch(e){}});S.db=null;showGate("login");updatePill();return}
+    Object.assign(S,{db:wrapDb(FB.fs),user:peopleApi,assets:photoStore,sample:null,dl:downloader,myId:u.uid,
+      canEdit:!!(window.DG_OWNER_EMAIL&&u.email&&u.email.toLowerCase()===String(window.DG_OWNER_EMAIL).toLowerCase())});
+    $("acctEmail").textContent=u.email||"";$("acctRole").textContent=S.canEdit?"project leader":"field team";$("restoreBox").hidden=!S.canEdit;
+    showGate("app");updatePill();startData();setTab(LS.get("dg_tab","record")==="identify"?"record":LS.get("dg_tab","record"))})})();
+
+/* offline app files */
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(e=>console.warn("Offline cache unavailable:",e));
+
+</script>
+</body>
+</html>
