@@ -903,17 +903,20 @@ $("nwPhoto").onchange=async e=>{const f=e.target.files[0];if(!f)return;$("nwPhot
 $("pmPhoto").onchange=async e=>{const f=e.target.files[0];if(!f)return;$("pmPhotoName").textContent="Preparing…";try{WB.pmImg=await webImg(f,1400);$("pmPhotoName").textContent=f.name}catch(_){WB.pmImg=null;$("pmPhotoName").textContent="That photo couldn't be read"}};
 $("nwPost").onclick=async()=>{const ti=$("nwTitle").value.trim(),bo=$("nwBody").value.trim();if(!ti||!bo){toast("Add an English title and text");return}
   const doc={titleEn:ti,bodyEn:bo,titleSw:$("nwTitleSw").value.trim()||null,bodySw:$("nwBodySw").value.trim()||null,photo:WB.nwImg||null,date:new Date().toISOString(),by:S.myId};
-  $("nwPost").disabled=true;try{await S.db.collection("news").doc(uid()).set(doc);["nwTitle","nwBody","nwTitleSw","nwBodySw"].forEach(k=>$(k).value="");WB.nwImg=null;$("nwPhoto").value="";$("nwPhotoName").textContent="";toast("Published. It shows on the website when this phone is online")}finally{$("nwPost").disabled=false}};
+  $("nwPost").disabled=true;try{await confirmed(S.db.collection("news").doc(uid()).setNow(doc)).catch(e=>{webErr(e);throw e});["nwTitle","nwBody","nwTitleSw","nwBodySw"].forEach(k=>$(k).value="");WB.nwImg=null;$("nwPhoto").value="";$("nwPhotoName").textContent="";toast("Published on the website")}finally{$("nwPost").disabled=false}};
 $("nwList").addEventListener("click",async e=>{const id=e.target.dataset.nwdel;if(!id)return;
   if(e.target.dataset.sure!=="1"){e.target.dataset.sure="1";e.target.textContent="Tap again to remove";setTimeout(()=>{if(e.target.isConnected){e.target.dataset.sure="";e.target.textContent="Remove"}},4000);return}
   await S.db.collection("news").doc(id).delete();toast("Removed from the website")});
 $("pmPost").onclick=async()=>{if(!WB.pmImg){toast("Choose a photo first");return}const cap=$("pmCap").value.trim();if(!cap){toast("Add an English caption");return}
-  $("pmPost").disabled=true;try{await S.db.collection("site").doc("photoOfMonth").set({photo:WB.pmImg,capEn:cap,capSw:$("pmCapSw").value.trim()||null,date:new Date().toISOString(),by:S.myId});WB.pmImg=null;$("pmPhoto").value="";$("pmPhotoName").textContent="";["pmCap","pmCapSw"].forEach(k=>$(k).value="");toast("Photo of the month published")}finally{$("pmPost").disabled=false}};
+  $("pmPost").disabled=true;try{await confirmed(S.db.collection("site").doc("photoOfMonth").setNow({photo:WB.pmImg,capEn:cap,capSw:$("pmCapSw").value.trim()||null,date:new Date().toISOString(),by:S.myId})).catch(e=>{webErr(e);throw e});;WB.pmImg=null;$("pmPhoto").value="";$("pmPhotoName").textContent="";["pmCap","pmCapSw"].forEach(k=>$(k).value="");toast("Photo of the month published")}finally{$("pmPost").disabled=false}};
 $("pmRemove").onclick=async()=>{if($("pmRemove").dataset.sure!=="1"){$("pmRemove").dataset.sure="1";$("pmRemove").textContent="Tap again to remove";setTimeout(()=>{$("pmRemove").dataset.sure="";$("pmRemove").textContent="Remove from website"},4000);return}
   await S.db.collection("site").doc("photoOfMonth").delete();toast("Photo of the month removed")};
 
 
 /* ---------- field status and survey progress (published to the website) ---------- */
+async function confirmed(p){let slow=setTimeout(()=>toast("Waiting for a connection… keep the app open"),6000);try{return await p}finally{clearTimeout(slow)}}
+function webErr(e){const m=String(e&&(e.code||e.message)||e);toast(/permission/i.test(m)?"Not allowed: sign in as the project leader (david.gunda@gmail.com) and check the Firestore rules":/unavailable|offline|network/i.test(m)?"No connection. It will be sent when the phone is online":"Couldn't save: "+m)}
+
 const PG={cfg:null,last:null};
 function pgCount(){const c=PG.cfg;if(!c)return null;const since=c.start||"0000";
   const plots=new Set((S.obs||[]).filter(r=>r.site===c.site&&String(r.createdAt).slice(0,10)>=since&&r.plot).map(r=>r.plot));
@@ -929,12 +932,12 @@ function liveStart(){
   S.db.collection("site").onSnapshot(s=>{const st=s.docs.find(d=>d.id==="status"),pg=s.docs.find(d=>d.id==="progress");
     if(st){const v=st.data();$("fsState").value=v.state||"";$("fsWhere").value=v.where||"";$("fsWhereSw").value=v.whereSw||""}
     PG.cfg=pg?(({name,nameSw,site,target,start,active})=>({name,nameSw:nameSw||null,site,target,start,active:active!==false}))(pg.data()):null;if(pg)PG.last=pg.data().percent;pgFill();pgPublish(false)},()=>{})}
-$("fsPost").onclick=async()=>{const st=$("fsState").value;
-  if(!st){await S.db.collection("site").doc("status").delete();toast("Status hidden from the website");return}
-  await S.db.collection("site").doc("status").set({state:st,where:$("fsWhere").value.trim()||null,whereSw:$("fsWhereSw").value.trim()||null,updatedAt:new Date().toISOString()});toast("Status updated on the website")};
+$("fsPost").onclick=async()=>{const st=$("fsState").value;$("fsPost").disabled=true;toast("Saving…");
+  try{if(!st){await confirmed(S.db.collection("site").doc("status").deleteNow());toast("Status hidden from the website");return}
+  await confirmed(S.db.collection("site").doc("status").setNow({state:st,where:$("fsWhere").value.trim()||null,whereSw:$("fsWhereSw").value.trim()||null,updatedAt:new Date().toISOString()}));toast("Status updated on the website")}catch(e){webErr(e)}finally{$("fsPost").disabled=false}};
 $("pgPost").onclick=async()=>{const name=$("pgName").value.trim(),target=parseInt($("pgTarget").value,10);
   if(!name||!(target>0)){toast("Add a survey name and the number of planned plots");return}
-  PG.cfg={name,nameSw:$("pgNameSw").value.trim()||null,site:$("pgSite").value,target,start:$("pgStart").value||new Date().toISOString().slice(0,10),active:true};PG.last=null;await pgPublish(true);toast("Progress shown on the website")};
+  PG.cfg={name,nameSw:$("pgNameSw").value.trim()||null,site:$("pgSite").value,target,start:$("pgStart").value||new Date().toISOString().slice(0,10),active:true};PG.last=null;try{await confirmed(S.db.collection("site").doc("progress").setNow({...PG.cfg,percent:(pgCount()||{pct:0}).pct,updatedAt:new Date().toISOString()}));PG.last=(pgCount()||{}).pct;pgPublish(false);toast("Progress shown on the website")}catch(e){webErr(e)}};
 $("pgStop").onclick=async()=>{if(!PG.cfg){toast("No progress bar on the website");return}PG.cfg.active=false;await S.db.collection("site").doc("progress").set({...PG.cfg,percent:PG.last||0,updatedAt:new Date().toISOString()});toast("Progress hidden from the website")};
 
 /* ---------- team notices (collection "notices") ---------- */
@@ -1518,7 +1521,7 @@ const clean=d=>JSON.parse(JSON.stringify(d,(k,v)=>v===undefined?null:v));
 function bg(p){p.catch(e=>{console.warn(e);toast(e&&e.code==="permission-denied"?"You don't have permission to change that":"A change couldn't be saved: "+(e&&e.message||e))});return Promise.resolve()}
 function wrapDb(fs){
   const toSnap=qs=>({docs:qs.docs.map(d=>({id:d.id,data:()=>d.data(),pending:d.metadata.hasPendingWrites})),size:qs.size,empty:qs.empty});
-  const docRef=r=>({id:r.id,set:d=>bg(r.set(clean(d))),update:d=>bg(r.update(clean(d))),delete:()=>bg(r.delete()),get:async()=>{const s=await r.get();return{exists:s.exists,id:s.id,data:()=>s.data()}}});
+  const docRef=r=>({id:r.id,setNow:d=>r.set(clean(d)),deleteNow:()=>r.delete(),set:d=>bg(r.set(clean(d))),update:d=>bg(r.update(clean(d))),delete:()=>bg(r.delete()),get:async()=>{const s=await r.get();return{exists:s.exists,id:s.id,data:()=>s.data()}}});
   const q=c=>({get:async()=>toSnap(await c.get()),
     onSnapshot:(next,err)=>{const u=c.onSnapshot({includeMetadataChanges:true},qs=>next(toSnap(qs)),e=>{console.warn(e);err&&err(e)});FB.subs.push(u);return u},
     orderBy:(...a)=>q(c.orderBy(...a)),limit:n=>q(c.limit(n)),where:(...a)=>q(c.where(...a))});
