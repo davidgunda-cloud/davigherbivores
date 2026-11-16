@@ -459,6 +459,13 @@ input[type=range]{padding:0;accent-color:var(--acacia)}
     <div class="row"><button id="csvBtn" class="btn ghost small" type="button">Export CSV</button><button id="bkBtn" class="btn ghost small" type="button">Back up all data</button></div>
   </div>
   <p id="bkInfo" class="hint" style="margin:8px 0 0"></p>
+  <details class="morph" id="wxExp" style="margin-top:12px"><summary>Weather export for a site and period</summary><div style="display:grid;gap:10px;padding:12px">
+    <p class="hint" style="margin:0">Downloads daily or hourly weather for the site area as a file that opens in Excel. Past data comes from the ERA5 weather archive (about 9–11 km grid); the last few days come from the forecast model. Values describe the area, not one plot.</p>
+    <div class="grid2"><label for="weSite">Site<select id="weSite"></select></label>
+      <label for="weStep">Detail<select id="weStep"><option value="daily">Daily (one row per day)</option><option value="hourly">Hourly (24 rows per day)</option></select></label></div>
+    <div class="grid2"><label for="weFrom">From<input id="weFrom" type="date"></label><label for="weTo">To<input id="weTo" type="date"></label></div>
+    <div class="row"><button id="weGo" class="btn small" type="button">Download weather</button><span id="weMsg" class="hint" style="margin:0"></span></div>
+  </div></details>
   <div id="recList" class="list" style="margin-top:12px"></div>
 </section>
 
@@ -981,6 +988,37 @@ async function wxWarn(){const box=$("wxWarn");if(!box)return;const id=$("site").
     if(d.wind_gusts_10m_max[i]>=50)w.push(`strong wind gusts (${Math.round(d.wind_gusts_10m_max[i])} km/h)`);if(d.temperature_2m_max[i]>=35)w.push(`extreme heat (${Math.round(d.temperature_2m_max[i])} °C)`);
     if(w.length)out.push(`<div><b>${lbl}:</b> ${w.join(", ")}</div>`)});
   box.innerHTML=out.length?`<b>⚠ Weather warning for ${esc(siteLabel(siteOf(id)||{name:""}))}</b>${out.join("")}<small class="hint" style="margin:0">Plan fieldwork and safety. Forecast from Open-Meteo for the site area.</small>`:"";box.hidden=!out.length}
+
+
+/* ---------- weather export (Open-Meteo archive + recent days; CSV for Excel) ---------- */
+const WE_D=["temperature_2m_max","temperature_2m_min","temperature_2m_mean","precipitation_sum","rain_sum","precipitation_hours","relative_humidity_2m_mean","wind_speed_10m_max","wind_gusts_10m_max","shortwave_radiation_sum","et0_fao_evapotranspiration","sunshine_duration"];
+const WE_DH=["date","temp_max_C","temp_min_C","temp_mean_C","precipitation_mm","rain_mm","precipitation_hours","humidity_mean_pct","wind_max_kmh","gust_max_kmh","radiation_MJ_m2","ET0_mm","sunshine_hours"];
+const WE_H=["temperature_2m","relative_humidity_2m","precipitation","cloud_cover","wind_speed_10m","wind_gusts_10m","shortwave_radiation"];
+const WE_HH=["date_time","temp_C","humidity_pct","precipitation_mm","cloud_pct","wind_kmh","gust_kmh","radiation_W_m2"];
+function weFill(){const sel=$("weSite"),cur=sel.value;sel.innerHTML=S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join("");if(cur)sel.value=cur;else if($("site").value)sel.value=$("site").value;
+  if(!$("weTo").value){const d=new Date();$("weTo").value=d.toISOString().slice(0,10);d.setDate(d.getDate()-30);$("weFrom").value=d.toISOString().slice(0,10)}}
+$("wxExp").addEventListener("toggle",()=>{if($("wxExp").open)weFill()});
+async function weGet(base,q){const r=await fetch(base+"?"+new URLSearchParams(q));if(!r.ok){let m="";try{m=(await r.json()).reason}catch(_){}throw new Error(m||("weather service "+r.status))}return r.json()}
+$("weGo").onclick=async()=>{const id=$("weSite").value,xy=siteXY(id),step=$("weStep").value,from=$("weFrom").value,to=$("weTo").value;
+  if(!xy){toast("This site has no location yet. Save a record with GPS there first");return}
+  if(!from||!to||from>to){toast("Choose a start date before the end date");return}
+  const days=(Date.parse(to)-Date.parse(from))/864e5+1;if(step==="hourly"&&days>366){toast("Hourly data: choose at most one year");return}
+  if(!navigator.onLine){toast("Weather export needs internet");return}
+  $("weGo").disabled=true;$("weMsg").textContent="Fetching weather…";
+  try{const today=new Date().toISOString().slice(0,10),cut=new Date(Date.now()-6*864e5).toISOString().slice(0,10);
+    const vars=step==="daily"?WE_D:WE_H,common={latitude:xy[0].toFixed(4),longitude:xy[1].toFixed(4),timezone:"auto",wind_speed_unit:"kmh"};common[step]=vars.join(",");
+    const parts=[];
+    if(from<=cut){parts.push(await weGet("https://archive-api.open-meteo.com/v1/archive",{...common,start_date:from,end_date:to<cut?to:cut}))}
+    if(to>cut){const s2=from>cut?from:new Date(Date.parse(cut)+864e5).toISOString().slice(0,10),e2=to>today?today:to;
+      if(s2<=e2)parts.push(await weGet("https://api.open-meteo.com/v1/forecast",{...common,start_date:s2,end_date:e2}))}
+    const rows=[];let tz="";parts.forEach(j=>{tz=j.timezone||tz;const b=j[step];(b.time||[]).forEach((tm,i)=>{rows.push([tm.replace("T"," "),...vars.map(v=>{let x=b[v]?b[v][i]:null;if(x==null)return"";if(v==="sunshine_duration")x=x/3600;return Math.round(x*100)/100})])})});
+    if(!rows.length)throw new Error("no data for these dates");
+    const s=siteOf(id)||{name:id},hdr=step==="daily"?WE_DH:WE_HH;
+    const meta=[`# DaviGherbivores weather export`,`# Site: ${s.name}${s.country?", "+s.country:""}`,`# Point used: ${xy[0].toFixed(4)}, ${xy[1].toFixed(4)} (centre of the site's plots or the site area)`,`# Period: ${from} to ${to}, ${step}, local time (${tz})`,`# Source: Open-Meteo, ERA5 reanalysis archive and weather model (open-meteo.com). Modelled values for the area, not station readings.`];
+    const csv="﻿"+meta.join("\n")+"\n"+[hdr,...rows].map(r=>r.map(v=>{const s=String(v??"");return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}).join(",")).join("\n");
+    await S.dl.save({filename:`weather_${(s.name||id).replace(/[^A-Za-z0-9]+/g,"_")}_${from}_${to}_${step}.csv`,data:new Blob([csv],{type:"text/csv;charset=utf-8"})});
+    $("weMsg").textContent=`${rows.length} rows downloaded.`}
+  catch(e){$("weMsg").textContent="";toast("Weather export failed: "+(e.message||e))}finally{$("weGo").disabled=false}};
 
 /* ---------- CSV ---------- */
 $("csvBtn").onclick=async()=>{if(!S.obs.length){toast("No records to export yet");return}
