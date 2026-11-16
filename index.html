@@ -993,6 +993,7 @@ async function wxWarn(){const box=$("wxWarn");if(!box)return;const id=$("site").
 /* ---------- weather export (Open-Meteo archive + recent days; CSV for Excel) ---------- */
 const WE_D=["temperature_2m_max","temperature_2m_min","temperature_2m_mean","precipitation_sum","rain_sum","precipitation_hours","relative_humidity_2m_mean","wind_speed_10m_max","wind_gusts_10m_max","shortwave_radiation_sum","et0_fao_evapotranspiration","sunshine_duration"];
 const WE_DH=["date","temp_max_C","temp_min_C","temp_mean_C","precipitation_mm","rain_mm","precipitation_hours","humidity_mean_pct","wind_max_kmh","gust_max_kmh","radiation_MJ_m2","ET0_mm","sunshine_hours"];
+const WE_S=["soil_moisture_0_to_7cm","soil_moisture_7_to_28cm","soil_temperature_0_to_7cm"],WE_SH=["soil_moisture_0_7cm_m3m3","soil_moisture_7_28cm_m3m3","soil_temp_0_7cm_C"];
 const WE_H=["temperature_2m","relative_humidity_2m","precipitation","cloud_cover","wind_speed_10m","wind_gusts_10m","shortwave_radiation"];
 const WE_HH=["date_time","temp_C","humidity_pct","precipitation_mm","cloud_pct","wind_kmh","gust_kmh","radiation_W_m2"];
 function weFill(){const sel=$("weSite"),cur=sel.value;sel.innerHTML=S.sites.map(s=>`<option value="${esc(s.id)}">${siteLabel(s)}</option>`).join("");if(cur)sel.value=cur;else if($("site").value)sel.value=$("site").value;
@@ -1012,9 +1013,14 @@ $("weGo").onclick=async()=>{const id=$("weSite").value,xy=siteXY(id),step=$("weS
     if(to>cut){const s2=from>cut?from:new Date(Date.parse(cut)+864e5).toISOString().slice(0,10),e2=to>today?today:to;
       if(s2<=e2)parts.push(await weGet("https://api.open-meteo.com/v1/forecast",{...common,start_date:s2,end_date:e2}))}
     const rows=[];let tz="";parts.forEach(j=>{tz=j.timezone||tz;const b=j[step];(b.time||[]).forEach((tm,i)=>{rows.push([tm.replace("T"," "),...vars.map(v=>{let x=b[v]?b[v][i]:null;if(x==null)return"";if(v==="sunshine_duration")x=x/3600;return Math.round(x*100)/100})])})});
+    /* soil: ERA5 archive only (same depths for the whole period); the most recent ~6 days stay blank */
+    const soil={};if(from<=cut){try{const j=await weGet("https://archive-api.open-meteo.com/v1/archive",{latitude:common.latitude,longitude:common.longitude,timezone:"auto",start_date:from,end_date:to<cut?to:cut,hourly:WE_S.join(",")});
+      const H=j.hourly||{},acc={};(H.time||[]).forEach((tm,i)=>{const k=step==="daily"?tm.slice(0,10):tm.replace("T"," ");const a=acc[k]||(acc[k]=WE_S.map(()=>[0,0]));WE_S.forEach((v,n)=>{const x=H[v]&&H[v][i];if(x!=null){a[n][0]+=x;a[n][1]++}})});
+      Object.keys(acc).forEach(k=>{soil[k]=acc[k].map(([t,c],n)=>c?Math.round(t/c*(n<2?1000:100))/(n<2?1000:100):"")})}catch(_){}}
+    rows.forEach(r=>{r.push(...(soil[r[0]]||WE_S.map(()=>"")))});
     if(!rows.length)throw new Error("no data for these dates");
-    const s=siteOf(id)||{name:id},hdr=step==="daily"?WE_DH:WE_HH;
-    const meta=[`# DaviGherbivores weather export`,`# Site: ${s.name}${s.country?", "+s.country:""}`,`# Point used: ${xy[0].toFixed(4)}, ${xy[1].toFixed(4)} (centre of the site's plots or the site area)`,`# Period: ${from} to ${to}, ${step}, local time (${tz})`,`# Source: Open-Meteo, ERA5 reanalysis archive and weather model (open-meteo.com). Modelled values for the area, not station readings.`];
+    const s=siteOf(id)||{name:id},hdr=[...(step==="daily"?WE_DH:WE_HH),...WE_SH];
+    const meta=[`# DaviGherbivores weather export`,`# Site: ${s.name}${s.country?", "+s.country:""}`,`# Point used: ${xy[0].toFixed(4)}, ${xy[1].toFixed(4)} (centre of the site's plots or the site area)`,`# Period: ${from} to ${to}, ${step}, local time (${tz})`,`# Source: Open-Meteo, ERA5 reanalysis archive and weather model (open-meteo.com). Modelled values for the area, not station readings.`,`# Soil columns: ERA5 reanalysis (daily = mean of hourly values). They are blank for roughly the last 6 days until the archive catches up.`];
     const csv="﻿"+meta.join("\n")+"\n"+[hdr,...rows].map(r=>r.map(v=>{const s=String(v??"");return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}).join(",")).join("\n");
     await S.dl.save({filename:`weather_${(s.name||id).replace(/[^A-Za-z0-9]+/g,"_")}_${from}_${to}_${step}.csv`,data:new Blob([csv],{type:"text/csv;charset=utf-8"})});
     $("weMsg").textContent=`${rows.length} rows downloaded.`}

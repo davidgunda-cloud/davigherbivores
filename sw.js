@@ -1,6 +1,6 @@
 // DaviGherbivores offline cache: keeps the app itself on the phone so it opens without signal.
 // Records are stored separately by Firebase and sync on their own.
-const CACHE = "dg-v8";
+const CACHE = "dg-v9";
 const CORE = ["./", "index.html", "manifest.json", "firebase-config.js", "icon-192.png", "icon-512.png",
   "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js",
   "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js",
